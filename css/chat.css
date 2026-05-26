@@ -1,0 +1,341 @@
+/* Estilos do Assistente / Chat - Inovar Assist */
+
+.chat-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn var(--transition-normal);
+}
+
+/* Histórico de Mensagens */
+.chat-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  scroll-behavior: smooth;
+}
+
+/* Bolhas de Mensagem */
+.message {
+  max-width: 80%;
+  animation: fadeIn 0.25s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mensagem enviada pelo Técnico */
+.message-user {
+  align-self: flex-end;
+  background-color: var(--inovar-red);
+  color: #ffffff;
+  padding: 0.8rem 1.25rem;
+  border-radius: 16px 16px 4px 16px;
+  font-weight: 500;
+  font-size: 0.925rem;
+  box-shadow: 0 4px 12px rgba(230, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Mensagem respondida pela IA */
+.message-bot {
+  align-self: flex-start;
+  width: 100%;
+}
+
+.bot-avatar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--inovar-red);
+  letter-spacing: 0.05em;
+}
+
+.bot-icon {
+  width: 24px;
+  height: 24px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--inovar-red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--inovar-red);
+  box-shadow: 0 0 6px var(--inovar-red-glow);
+}
+
+.bot-icon svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
+.bot-response-container {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 4px 16px 16px 16px;
+  padding: 1.25rem 1.5rem;
+  max-width: 85%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.bot-response-text {
+  line-height: 1.6;
+  color: var(--text-primary);
+  font-size: 0.925rem;
+}
+
+/* --- FORMATADOR DE CONTEÚDO (Simulador de Markdown) --- */
+.bot-response-text p {
+  margin-bottom: 0.75rem;
+}
+
+.bot-response-text p:last-child {
+  margin-bottom: 0;
+}
+
+.bot-response-text strong {
+  color: var(--inovar-red);
+  font-weight: 600;
+}
+
+.bot-response-text h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem 0;
+  color: var(--text-primary);
+  border-left: 2px solid var(--inovar-red);
+  padding-left: 0.5rem;
+}
+
+.bot-response-text code {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: rgba(230, 0, 0, 0.08);
+  padding: 0.15rem 0.35rem;
+  border-radius: var(--radius-sm);
+  color: var(--inovar-red-hover);
+  font-size: 0.85rem;
+  border: 1px solid rgba(230, 0, 0, 0.15);
+}
+
+.bot-response-text pre {
+  background-color: #0b0b0e;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  margin: 0.85rem 0;
+}
+
+.bot-response-text pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: #c9d1d9; /* Cor cinza claro para códigos longos, melhor leitura */
+  font-size: 0.85rem;
+}
+
+.bot-response-text ul {
+  margin: 0.75rem 0 0.75rem 1.25rem;
+}
+
+.bot-response-text li {
+  margin-bottom: 0.4rem;
+}
+
+.bot-response-text li::marker {
+  color: var(--inovar-red);
+}
+
+.bot-response-text blockquote {
+  background: rgba(230, 0, 0, 0.05);
+  border-left: 3px solid var(--inovar-red);
+  padding: 0.5rem 1rem;
+  margin: 0.85rem 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.bot-response-text blockquote p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Botões de Ação na Resposta do Bot */
+.bot-response-actions {
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.action-button {
+  background-color: rgba(230, 0, 0, 0.06);
+  color: var(--inovar-red);
+  border: 1px solid var(--inovar-red);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.action-button:hover {
+  background-color: var(--inovar-red);
+  color: #ffffff;
+  box-shadow: 0 0 12px var(--inovar-red-glow);
+}
+
+.action-button.success-action {
+  color: var(--color-success);
+  border-color: var(--color-success);
+  background-color: rgba(0, 204, 102, 0.06);
+}
+
+.action-button.success-action:hover {
+  background-color: var(--color-success);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(0, 204, 102, 0.2);
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: transparent !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+/* Área de Input no rodapé */
+.input-area {
+  padding: 1.25rem 1.75rem;
+  background-color: rgba(17, 17, 20, 0.95);
+  border-top: 1px solid var(--border-color);
+  z-index: 20;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.chat-input {
+  flex: 1;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  padding: 0.9rem 4.5rem 0.9rem 1.25rem;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.chat-input:focus {
+  border-color: var(--inovar-red);
+  box-shadow: 0 0 0 3px var(--inovar-red-glow);
+}
+
+.chat-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Botão de Enviar integrado ao Input */
+.send-button {
+  position: absolute;
+  right: 0.6rem;
+  background-color: var(--inovar-red);
+  color: #ffffff;
+  border: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.send-button:hover {
+  background-color: var(--inovar-red-hover);
+  box-shadow: 0 0 10px var(--inovar-red-glow-strong);
+}
+
+.send-button:disabled {
+  background-color: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Botão do Admin na barra inferior */
+.btn-admin-access {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-admin-access:hover {
+  color: var(--inovar-red);
+  border-color: var(--inovar-red);
+  background-color: rgba(230, 0, 0, 0.05);
+  box-shadow: 0 0 10px var(--inovar-red-glow);
+}
+
+/* Indicador de Carregamento (Loading) */
+.loading-indicator {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 1.25rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 4px 16px 16px 16px;
+  align-self: flex-start;
+  max-width: 80px;
+}
+
+.loading-dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--inovar-red);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}

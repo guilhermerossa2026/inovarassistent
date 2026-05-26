@@ -1,0 +1,12 @@
+# Antigravity CLI and Agent config directories
+.antigravitycli/
+
+# IDE and OS clutter
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.log
