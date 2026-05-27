@@ -8,20 +8,20 @@
   animation: fadeIn var(--transition-normal);
 }
 
-/* Histórico de Mensagens */
+/* Histórico de Mensagens (Compactado) */
 .chat-history {
   flex: 1;
   overflow-y: auto;
-  padding: 1.75rem;
+  padding: 0.9rem 1.25rem; /* Reduzido padding vertical de 1.75rem */
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.85rem; /* Reduzido espaçamento de 1.5rem */
   scroll-behavior: smooth;
 }
 
 /* Bolhas de Mensagem */
 .message {
-  max-width: 80%;
+  max-width: 85%; /* Aumentado limite de largura para melhor uso horizontal */
   animation: fadeIn 0.25s ease-out;
   display: flex;
   flex-direction: column;
@@ -32,11 +32,11 @@
   align-self: flex-end;
   background-color: var(--inovar-red);
   color: #ffffff;
-  padding: 0.8rem 1.25rem;
-  border-radius: 16px 16px 4px 16px;
+  padding: 0.55rem 0.9rem; /* Reduzido padding de 0.8rem 1.25rem */
+  border-radius: 12px 12px 3px 12px; /* Raio de cantos mais elegante */
   font-weight: 500;
-  font-size: 0.925rem;
-  box-shadow: 0 4px 12px rgba(230, 0, 0, 0.15);
+  font-size: 0.875rem; /* Reduzido de 0.925rem */
+  box-shadow: 0 3px 10px rgba(230, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -49,18 +49,18 @@
 .bot-avatar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem; /* Reduzido de 0.4rem */
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduzido de 0.75rem */
   font-weight: 700;
   color: var(--inovar-red);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .bot-icon {
-  width: 24px;
-  height: 24px;
+  width: 22px; /* Reduzido de 24px */
+  height: 22px; /* Reduzido de 24px */
   background-color: var(--bg-panel);
   border: 1px solid var(--inovar-red);
   border-radius: 50%;
@@ -68,33 +68,33 @@
   align-items: center;
   justify-content: center;
   color: var(--inovar-red);
-  box-shadow: 0 0 6px var(--inovar-red-glow);
+  box-shadow: 0 0 5px var(--inovar-red-glow);
 }
 
 .bot-icon svg {
-  width: 13px;
-  height: 13px;
+  width: 11px; /* Reduzido */
+  height: 11px; /* Reduzido */
   fill: currentColor;
 }
 
 .bot-response-container {
   background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
-  border-radius: 4px 16px 16px 16px;
-  padding: 1.25rem 1.5rem;
-  max-width: 85%;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 3px 12px 12px 12px; /* Design de cantos mais suave */
+  padding: 0.85rem 1.15rem; /* Reduzido de 1.25rem 1.5rem */
+  max-width: 88%; /* Ajustado para melhor ocupação em telas grandes/TVs */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .bot-response-text {
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--text-primary);
-  font-size: 0.925rem;
+  font-size: 0.875rem; /* Reduzido de 0.925rem */
 }
 
-/* --- FORMATADOR DE CONTEÚDO (Simulador de Markdown) --- */
+/* --- FORMATADOR DE CONTEÚDO (Simulador de Markdown Compacto) --- */
 .bot-response-text p {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem; /* Reduzido de 0.75rem */
 }
 
 .bot-response-text p:last-child {
@@ -107,9 +107,9 @@
 }
 
 .bot-response-text h3 {
-  font-size: 1.05rem;
+  font-size: 0.975rem; /* Reduzido de 1.05rem */
   font-weight: 600;
-  margin: 1.25rem 0 0.5rem 0;
+  margin: 1rem 0 0.4rem 0; /* Reduzido espaçamento vertical */
   color: var(--text-primary);
   border-left: 2px solid var(--inovar-red);
   padding-left: 0.5rem;
@@ -117,37 +117,37 @@
 
 .bot-response-text code {
   font-family: 'JetBrains Mono', monospace;
-  background-color: rgba(230, 0, 0, 0.08);
-  padding: 0.15rem 0.35rem;
+  background-color: rgba(230, 0, 0, 0.06);
+  padding: 0.1rem 0.3rem;
   border-radius: var(--radius-sm);
   color: var(--inovar-red-hover);
-  font-size: 0.85rem;
-  border: 1px solid rgba(230, 0, 0, 0.15);
+  font-size: 0.8rem; /* Reduzido de 0.85rem */
+  border: 1px solid rgba(230, 0, 0, 0.1);
 }
 
 .bot-response-text pre {
   background-color: #0b0b0e;
-  padding: 0.9rem 1.1rem;
+  padding: 0.7rem 0.9rem; /* Reduzido de 0.9rem 1.1rem */
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   overflow-x: auto;
-  margin: 0.85rem 0;
+  margin: 0.6rem 0; /* Reduzido de 0.85rem */
 }
 
 .bot-response-text pre code {
   background-color: transparent;
   border: none;
   padding: 0;
-  color: #c9d1d9; /* Cor cinza claro para códigos longos, melhor leitura */
-  font-size: 0.85rem;
+  color: #c9d1d9;
+  font-size: 0.8rem; /* Reduzido de 0.85rem */
 }
 
 .bot-response-text ul {
-  margin: 0.75rem 0 0.75rem 1.25rem;
+  margin: 0.5rem 0 0.5rem 1.1rem; /* Reduzido margem lateral */
 }
 
 .bot-response-text li {
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem; /* Reduzido de 0.4rem */
 }
 
 .bot-response-text li::marker {
@@ -155,61 +155,61 @@
 }
 
 .bot-response-text blockquote {
-  background: rgba(230, 0, 0, 0.05);
+  background: rgba(230, 0, 0, 0.03);
   border-left: 3px solid var(--inovar-red);
-  padding: 0.5rem 1rem;
-  margin: 0.85rem 0;
+  padding: 0.4rem 0.8rem; /* Reduzido de 0.5rem 1rem */
+  margin: 0.6rem 0; /* Reduzido de 0.85rem */
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
 .bot-response-text blockquote p {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.825rem; /* Reduzido de 0.875rem */
   color: var(--text-secondary);
 }
 
 /* Botões de Ação na Resposta do Bot */
 .bot-response-actions {
-  margin-top: 1.25rem;
-  padding-top: 0.85rem;
+  margin-top: 0.85rem; /* Reduzido de 1.25rem */
+  padding-top: 0.65rem; /* Reduzido de 0.85rem */
   border-top: 1px solid var(--border-color);
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem; /* Reduzido de 0.75rem */
 }
 
 .action-button {
-  background-color: rgba(230, 0, 0, 0.06);
+  background-color: rgba(230, 0, 0, 0.05);
   color: var(--inovar-red);
   border: 1px solid var(--inovar-red);
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.75rem; /* Reduzido de 0.5rem 1rem */
   border-radius: var(--radius-sm);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduzido de 0.75rem */
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .action-button:hover {
   background-color: var(--inovar-red);
   color: #ffffff;
-  box-shadow: 0 0 12px var(--inovar-red-glow);
+  box-shadow: 0 0 10px var(--inovar-red-glow);
 }
 
 .action-button.success-action {
   color: var(--color-success);
   border-color: var(--color-success);
-  background-color: rgba(0, 204, 102, 0.06);
+  background-color: rgba(0, 204, 102, 0.05);
 }
 
 .action-button.success-action:hover {
   background-color: var(--color-success);
   color: #ffffff;
-  box-shadow: 0 0 12px rgba(0, 204, 102, 0.2);
+  box-shadow: 0 0 10px rgba(0, 204, 102, 0.15);
 }
 
 .action-button:disabled {
@@ -221,10 +221,10 @@
   box-shadow: none !important;
 }
 
-/* Área de Input no rodapé */
+/* Área de Input no rodapé (Compacta) */
 .input-area {
-  padding: 1.25rem 1.75rem;
-  background-color: rgba(17, 17, 20, 0.95);
+  padding: 0.75rem 1.25rem; /* Reduzido de 1.25rem 1.75rem */
+  background-color: rgba(17, 17, 20, 0.98);
   border-top: 1px solid var(--border-color);
   z-index: 20;
 }
@@ -232,7 +232,7 @@
 .input-container {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem; /* Reduzido */
   position: relative;
 }
 
@@ -240,11 +240,11 @@
   flex: 1;
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);
-  padding: 0.9rem 4.5rem 0.9rem 1.25rem;
+  padding: 0.65rem 3.5rem 0.65rem 1rem; /* Compactado paddings */
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem; /* Reduzido de 0.95rem */
   outline: none;
   transition: var(--transition-fast);
 }
@@ -258,15 +258,15 @@
   color: var(--text-muted);
 }
 
-/* Botão de Enviar integrado ao Input */
+/* Botão de Enviar integrado ao Input (Compacto) */
 .send-button {
   position: absolute;
-  right: 0.6rem;
+  right: 0.4rem;
   background-color: var(--inovar-red);
   color: #ffffff;
   border: none;
-  width: 2.6rem;
-  height: 2.6rem;
+  width: 2.1rem; /* Reduzido de 2.6rem */
+  height: 2.1rem; /* Reduzido de 2.6rem */
   border-radius: var(--radius-sm);
   display: flex;
   justify-content: center;
@@ -277,7 +277,7 @@
 
 .send-button:hover {
   background-color: var(--inovar-red-hover);
-  box-shadow: 0 0 10px var(--inovar-red-glow-strong);
+  box-shadow: 0 0 8px var(--inovar-red-glow-strong);
 }
 
 .send-button:disabled {
@@ -288,13 +288,13 @@
   box-shadow: none;
 }
 
-/* Botão do Admin na barra inferior */
+/* Botão do Admin na barra inferior (Compacto) */
 .btn-admin-access {
   background-color: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  width: 3.2rem;
-  height: 3.2rem;
+  width: 2.5rem; /* Reduzido de 3.2rem */
+  height: 2.5rem; /* Reduzido de 3.2rem */
   border-radius: var(--radius-md);
   display: flex;
   justify-content: center;
@@ -306,8 +306,8 @@
 .btn-admin-access:hover {
   color: var(--inovar-red);
   border-color: var(--inovar-red);
-  background-color: rgba(230, 0, 0, 0.05);
-  box-shadow: 0 0 10px var(--inovar-red-glow);
+  background-color: rgba(230, 0, 0, 0.04);
+  box-shadow: 0 0 8px var(--inovar-red-glow);
 }
 
 /* Indicador de Carregamento (Loading) */
@@ -315,18 +315,18 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.75rem 1.25rem;
+  gap: 0.3rem;
+  padding: 0.5rem 0.85rem; /* Reduzido */
   background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
-  border-radius: 4px 16px 16px 16px;
+  border-radius: 3px 12px 12px 12px; /* Combinando com bolhas */
   align-self: flex-start;
-  max-width: 80px;
+  max-width: 65px; /* Reduzido de 80px */
 }
 
 .loading-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px; /* Reduzido de 6px */
+  height: 5px; /* Reduzido de 6px */
   background-color: var(--inovar-red);
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
@@ -338,4 +338,131 @@
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
+}
+
+/* Grid de chips de onboarding de categorias */
+.category-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.category-chip {
+  background-color: rgba(230, 0, 0, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.category-chip:hover {
+  background-color: rgba(230, 0, 0, 0.08);
+  color: var(--inovar-red-hover);
+  border-color: rgba(230, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Box de mensagem pronta para o cliente (Canned Response) */
+.client-response-box {
+  margin-top: 0.85rem;
+  background: rgba(0, 204, 102, 0.02);
+  border: 1px dashed rgba(0, 204, 102, 0.2);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  position: relative;
+}
+
+.client-response-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-success);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.client-response-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  font-style: italic;
+}
+
+.copy-canned-btn {
+  background: rgba(0, 204, 102, 0.06);
+  color: var(--color-success);
+  border: 1px solid rgba(0, 204, 102, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.copy-canned-btn:hover {
+  background: var(--color-success);
+  color: #ffffff;
+  border-color: var(--color-success);
+  box-shadow: 0 0 8px rgba(0, 204, 102, 0.15);
+}
+
+/* Botões interativos de escolha (Árvore de decisão) */
+.interactive-choices-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.interactive-choice-btn {
+  background-color: rgba(255, 255, 255, 0.01);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.interactive-choice-btn:hover {
+  border-color: var(--inovar-red);
+  background-color: rgba(230, 0, 0, 0.03);
+  color: var(--inovar-red-hover);
+  padding-left: 1rem; /* Efeito deslizamento sutil */
+}
+
+.interactive-choice-btn svg {
+  width: 12px;
+  height: 12px;
+  transition: var(--transition-fast);
+  opacity: 0.6;
+}
+
+.interactive-choice-btn:hover svg {
+  opacity: 1;
+  transform: translateX(3px);
 }

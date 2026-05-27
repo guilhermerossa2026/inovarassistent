@@ -9,6 +9,8 @@
 body {
   font-family: 'Inter', sans-serif;
   background-color: var(--bg-app);
+  /* Gradiente radial muito suave para profundidade premium, limpa e moderna */
+  background-image: radial-gradient(circle at 50% 50%, #15151a 0%, #060608 100%);
   color: var(--text-primary);
   height: 100vh;
   display: flex;
@@ -16,27 +18,20 @@ body {
   align-items: center;
   overflow: hidden;
   position: relative;
-  
-  /* Efeito de grade sutil para visual técnico */
-  background-image:
-    linear-gradient(var(--border-light) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border-light) 1px, transparent 1px);
-  background-size: 40px 40px;
-  background-position: center center;
 }
 
-/* Moldura Principal do App */
+/* Moldura Principal do App (Altamente Fluida e Responsiva) */
 .app-container {
-  width: 95%;
-  max-width: 1150px;
-  height: 85vh;
-  max-height: 760px;
-  min-height: 560px;
+  width: 95vw;
+  max-width: 1300px; /* Expandido para acomodar perfeitamente telas maiores ou TVs */
+  height: 90vh; /* Aumentado aproveitamento de tela vertical */
+  max-height: 840px; /* Reduzido o limite máximo de altura para caber com folga em laptops */
+  min-height: 480px; /* Garante usabilidade mínima */
   background-color: var(--bg-panel-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--inovar-red);
+  border: 1px solid rgba(230, 0, 0, 0.35); /* Borda vermelha mais translúcida, limpa e moderna */
   box-shadow: var(--shadow-main), var(--shadow-red);
   display: flex;
   flex-direction: column;
@@ -45,49 +40,32 @@ body {
   animation: scaleIn var(--transition-normal);
 }
 
-/* Efeito Cyberpunk de Scanline */
+/* Efeito Cyberpunk de Scanline (Desativado para Visual Limpo) */
 .scanline-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.25) 50%
-  ), linear-gradient(
-    90deg, 
-    rgba(255, 0, 0, 0.06), 
-    rgba(0, 255, 0, 0.02), 
-    rgba(0, 0, 255, 0.06)
-  );
-  background-size: 100% 4px, 6px 100%;
-  pointer-events: none;
-  z-index: 999;
-  opacity: 0.35;
+  display: none !important; /* Totalmente limpo e legível */
 }
 
-/* Cabeçalho do Sistema */
+/* Cabeçalho do Sistema (Compacto) */
 .app-header {
-  padding: 1rem 1.75rem;
+  padding: 0.65rem 1.25rem; /* Reduzido padding vertical */
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(17, 17, 20, 0.9);
+  background-color: rgba(17, 17, 20, 0.95);
   z-index: 20;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .brand-logo {
-  height: 38px;
+  height: 28px; /* Reduzido de 38px */
   width: auto;
-  filter: drop-shadow(0 0 4px var(--inovar-red-glow));
+  filter: drop-shadow(0 0 3px var(--inovar-red-glow));
 }
 
 .brand-title-group {
@@ -96,9 +74,9 @@ body {
 }
 
 .brand-name {
-  font-size: 1.1rem;
+  font-size: 0.95rem; /* Reduzido de 1.1rem */
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: var(--text-primary);
   text-transform: uppercase;
 }
@@ -108,35 +86,35 @@ body {
 }
 
 .brand-subtitle {
-  font-size: 0.7rem;
+  font-size: 0.65rem; /* Reduzido de 0.7rem */
   font-family: 'JetBrains Mono', monospace;
   color: var(--text-secondary);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .user-indicator {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   background-color: var(--bg-input);
-  padding: 0.4rem 0.8rem;
+  padding: 0.3rem 0.65rem; /* Reduzido padding */
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* Reduzido de 0.8rem */
 }
 
 .user-indicator-icon {
-  width: 8px;
-  height: 8px;
+  width: 6px; /* Reduzido */
+  height: 6px;
   background-color: var(--color-success);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--color-success);
+  box-shadow: 0 0 6px var(--color-success);
 }
 
 .user-indicator-name {
@@ -149,7 +127,7 @@ body {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-decoration: underline;
   padding: 0;
   transition: var(--transition-fast);
@@ -162,15 +140,15 @@ body {
 .status-block {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
+  font-size: 0.7rem; /* Reduzido de 0.75rem */
   color: var(--text-secondary);
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background-color: var(--inovar-red);
   border-radius: 50%;
   animation: pulseRed 2.5s infinite;
@@ -189,24 +167,24 @@ body {
   display: none !important;
 }
 
-/* --- TELA DE LOGIN / IDENTIFICAÇÃO --- */
+/* --- TELA DE LOGIN / IDENTIFICAÇÃO (COMPACTA) --- */
 .login-view {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem;
   animation: fadeIn var(--transition-normal);
 }
 
 .login-card {
   width: 100%;
-  max-width: 420px;
-  background-color: rgba(20, 20, 25, 0.8);
+  max-width: 380px; /* Reduzido de 420px */
+  background-color: rgba(20, 20, 25, 0.85);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 2.5rem;
+  padding: 1.75rem; /* Reduzido de 2.5rem */
   box-shadow: var(--shadow-main);
   text-align: center;
   position: relative;
@@ -220,43 +198,43 @@ body {
   right: 0;
   height: 3px;
   background: var(--inovar-red);
-  box-shadow: 0 0 15px var(--inovar-red);
+  box-shadow: 0 0 10px var(--inovar-red);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .login-logo-container {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem; /* Reduzido */
 }
 
 .login-logo {
-  height: 50px;
+  height: 42px; /* Reduzido de 50px */
   width: auto;
 }
 
 .login-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem; /* Reduzido de 1.5rem */
   font-weight: 600;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.01em;
 }
 
 .login-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Reduzido de 0.875rem */
   color: var(--text-secondary);
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem; /* Reduzido */
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem; /* Reduzido de 1.5rem */
   text-align: left;
 }
 
 .form-label {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.75rem; /* Reduzido de 0.8rem */
   font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -266,10 +244,10 @@ body {
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem; /* Reduzido de 0.75rem 1rem */
   border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem; /* Reduzido de 0.95rem */
   outline: none;
   transition: var(--transition-fast);
 }
@@ -284,9 +262,9 @@ body {
   background-color: var(--inovar-red);
   color: #ffffff;
   border: none;
-  padding: 0.85rem;
+  padding: 0.7rem; /* Reduzido de 0.85rem */
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  font-size: 0.9rem; /* Reduzido de 0.95rem */
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-fast);
@@ -294,12 +272,12 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 12px rgba(230, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(230, 0, 0, 0.15);
 }
 
 .btn-primary:hover {
   background-color: var(--inovar-red-hover);
-  box-shadow: 0 4px 18px var(--inovar-red-glow-strong);
+  box-shadow: 0 4px 14px var(--inovar-red-glow-strong);
   transform: translateY(-1px);
 }
 

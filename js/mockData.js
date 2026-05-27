@@ -7,6 +7,7 @@ const initialKnowledgeBase = [
     category: "Fiscal",
     tags: ["nfe", "timeout", "sefaz", "integrador", "fiscal", "erro 500"],
     description: "Instabilidade de conexão com os servidores da SEFAZ ou bloqueio local de portas que impede o retorno do XML assinado.",
+    clientFriendly: "Prezado cliente, identificamos que a falha na emissão da nota fiscal ocorre devido a uma instabilidade temporária de conexão com os servidores autorizadores da SEFAZ ou instabilidade em sua operadora de internet. Nossa equipe técnica já está reiniciando o serviço do módulo integrador local para reestabelecer a fila de processamento. Por favor, aguarde de 3 a 5 minutos e tente efetuar a reemissão do documento.",
     solution: `Este problema geralmente ocorre por instabilidade na SEFAZ ou regras de bloqueio no firewall do cliente.
 
 ### Procedimento de Diagnóstico e Correção:
@@ -40,6 +41,7 @@ const initialKnowledgeBase = [
     category: "Banco de Dados",
     tags: ["banco", "deadlock", "travamento", "pdv", "sql", "kill"],
     description: "Concorrência de transações no banco SQL que trava as operações de vendas e fechamento de caixa.",
+    clientFriendly: "Prezado cliente, identificamos um travamento temporário no processamento de vendas no PDV, ocasionado por uma sobrecarga/concorrência de transações simultâneas no banco de dados. Nossa equipe técnica já efetuou a liberação da conexão conflitante no servidor de forma segura. O sistema já retornou à normalidade e você pode continuar realizando suas vendas!",
     solution: `Um deadlock ocorre quando duas transações se bloqueiam mutuamente. Isso causa travamento geral nas telas do PDV.
 
 ### Como identificar e liberar:
@@ -79,6 +81,7 @@ const initialKnowledgeBase = [
     category: "Periféricos",
     tags: ["balança", "filizola", "peso", "com", "serial", "configurar"],
     description: "O PDV não consegue ler o peso transmitido pela balança Filizola conectada na porta Serial (COM).",
+    clientFriendly: "Prezado cliente, identificamos que a balança Filizola não estava transmitindo o peso para o caixa porque a porta COM (serial) foi alterada ou desconectada no gerenciador de dispositivos do Windows. Realizamos o remapeamento da porta de comunicação e a sincronização dos parâmetros de Baud Rate (velocidade). O leitor de peso da balança já está operacional e calibrado para as vendas.",
     solution: `Caso o PDV retorne peso zerado ou erro de leitura ao acionar a pesagem da balança Filizola, siga estas etapas:
 
 ### Passo a Passo para Configuração:
@@ -106,6 +109,7 @@ const initialKnowledgeBase = [
     category: "Periféricos",
     tags: ["impressora", "termica", "nao imprime", "bobina", "spooler", "usb"],
     description: "Impressora não responde aos comandos de impressão de cupom fiscal ou recibo, mesmo ligada.",
+    clientFriendly: "Prezado cliente, identificamos que a impressora térmica parou de imprimir devido a um acúmulo de documentos corrompidos na fila de impressão do Windows (Spooler), bloqueando novos cupons. Efetuamos a limpeza completa dos arquivos corrompidos e reiniciamos o serviço de spooler do Windows. A impressora já está ativa e todas as impressões pendentes serão emitidas automaticamente em instantes.",
     solution: `Quando a impressora térmica (Bematech, Elgin ou Epson) para de imprimir repentinamente, o spooler do Windows costuma estar travado com documentos corrompidos.
 
 ### Procedimento de Limpeza do Spooler:

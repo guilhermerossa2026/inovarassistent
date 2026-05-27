@@ -1,0 +1,43 @@
+{
+  "name": "inovar-assist",
+  "version": "1.0.0",
+  "description": "Assistente Inteligente de Suporte - Sistema Inovar",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build-win": "electron-builder --win"
+  },
+  "author": "Guilherme Rossa",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.inovar.assist",
+    "productName": "Inovar Assist",
+    "directories": {
+      "output": "dist-prod"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "img/app_icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Inovar Assist"
+    }
+  }
+}

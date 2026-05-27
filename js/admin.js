@@ -543,5 +543,7 @@ class AdminController {
   }
 }
 
-// Expõe globalmente
-window.adminController = new AdminController();
+// Expõe globalmente após o carregamento do DOM para evitar falhas de elemento
+document.addEventListener('DOMContentLoaded', () => {
+  window.adminController = new AdminController();
+});

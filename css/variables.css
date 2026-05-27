@@ -6,19 +6,19 @@
   /* Color Palette */
   --bg-app: #08080a;               /* Fundo geral super escuro com tom sutil de azul */
   --bg-panel: #111114;             /* Painéis */
-  --bg-panel-glass: rgba(17, 17, 20, 0.75); /* Vidro translúcido */
+  --bg-panel-glass: rgba(17, 17, 20, 0.85); /* Vidro translúcido (um pouco mais opaco para legibilidade sem scanlines) */
   --bg-input: #17171c;             /* Fundo dos campos de entrada */
   
   --text-primary: #f8f9fa;         /* Texto claro principal */
-  --text-secondary: #8e929b;       /* Texto cinza auxiliar */
-  --text-muted: #565a65;           /* Texto muito discreto */
+  --text-secondary: #9ea3ae;       /* Texto cinza auxiliar (aumentado contraste de #8e929b para #9ea3ae) */
+  --text-muted: #5e6370;           /* Texto muito discreto (aumentado contraste de #565a65 para #5e6370) */
 
   /* Identidade Visual Inovar (Vermelho e Glows) */
   --inovar-red: #e60000;
   --inovar-red-hover: #ff1a1a;
   --inovar-red-dark: #990000;
-  --inovar-red-glow: rgba(230, 0, 0, 0.25);
-  --inovar-red-glow-strong: rgba(230, 0, 0, 0.45);
+  --inovar-red-glow: rgba(230, 0, 0, 0.15); /* Glow mais suave e limpo */
+  --inovar-red-glow-strong: rgba(230, 0, 0, 0.3); /* Glow mais suave e limpo */
   
   /* Status adicionais */
   --color-success: #00cc66;
@@ -28,18 +28,34 @@
   
   --border-color: #242630;         /* Bordas escuras */
   --border-color-focus: #e60000;
-  --border-light: rgba(255, 255, 255, 0.05);
+  --border-light: rgba(255, 255, 255, 0.04);
+
+  /* Spacing System (Compact & Fluid) */
+  --spacing-xs: 0.35rem;
+  --spacing-sm: 0.65rem;
+  --spacing-md: 0.9rem;
+  --spacing-lg: 1.2rem;
+  --spacing-xl: 1.5rem;
+
+  /* Typography Scale (Sleek & Technical) */
+  --font-base: 0.875rem;           /* Base: 14px em vez de 16px */
+  --font-size-h1: 1.5rem;
+  --font-size-h2: 1.2rem;
+  --font-size-h3: 1.05rem;
+  --font-size-body: 0.875rem;
+  --font-size-small: 0.75rem;
+  --font-size-xs: 0.65rem;
 
   /* Layout / UI */
-  --radius-lg: 16px;
-  --radius-md: 10px;
-  --radius-sm: 6px;
+  --radius-lg: 12px;               /* Cantos ligeiramente mais refinados */
+  --radius-md: 8px;
+  --radius-sm: 4px;
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Sombras */
-  --shadow-main: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-red: 0 0 30px rgba(230, 0, 0, 0.2);
+  --shadow-main: 0 10px 40px rgba(0, 0, 0, 0.6);
+  --shadow-red: 0 0 25px rgba(230, 0, 0, 0.12); /* Shadow mais refinada e limpa */
 }
 
 /* Animações Globais Reutilizáveis */
