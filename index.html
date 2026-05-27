@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inovar Assist - Assistente Inteligente de Suporte</title>
+  <title>Inovar Assistente - Assistente Inteligente de Suporte</title>
   <meta name="description" content="Base de conhecimento inteligente e centralizadora para suporte técnico do Sistema Inovar.">
 
   <!-- Estilos Modulares -->
@@ -27,7 +27,7 @@
       <div class="brand">
         <img src="img/app_icon.png" alt="Inovar Logo" class="brand-logo" onerror="this.style.display='none'">
         <div class="brand-title-group">
-          <div class="brand-name">Inovar <span>Assist</span></div>
+          <div class="brand-name">Inovar <span>Assistente</span></div>
           <div class="brand-subtitle">SUPORTE INTELIGENTE CENTRAL</div>
         </div>
       </div>
@@ -42,7 +42,7 @@
 
         <div class="status-block">
           <span class="status-dot"></span>
-          <span>LOCAL SEED DATABASE V.1.2</span>
+          <span>V1.0</span>
         </div>
       </div>
     </header>
@@ -59,9 +59,11 @@
           <h2 class="login-title">Portal de Suporte</h2>
           <p class="login-subtitle">Identifique-se para acessar a base de erros do Sistema Inovar</p>
 
-          <div class="form-group">
-            <label for="login-username" class="form-label">Nome do Técnico Operador</label>
-            <input type="text" id="login-username" class="form-input" placeholder="Ex: Guilherme, Alisson..." autocomplete="off">
+          <div class="form-group" style="text-align: left;">
+            <label for="login-username" class="form-label">Nome de Usuário</label>
+            <input type="text" id="login-username" class="form-input" placeholder="Digite seu usuário..." autocomplete="off" required style="margin-bottom: 0.75rem;">
+            <label for="login-password" class="form-label">Senha de Acesso</label>
+            <input type="password" id="login-password" class="form-input" placeholder="••••" autocomplete="off" required>
           </div>
 
           <button id="btn-login-submit" class="btn-primary">
@@ -127,6 +129,15 @@
               </svg>
               Relatórios & Métricas
             </button>
+            <button id="tab-users-btn" class="admin-tab-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              Gerenciar Usuários
+            </button>
           </div>
 
           <button id="btn-close-admin" class="btn-back-chat">
@@ -181,13 +192,14 @@
                   <div class="form-grid-2">
                     <div class="form-group">
                       <label for="form-category" class="form-label">Categoria do Processo</label>
-                      <select id="form-category" class="form-input" style="cursor: pointer;">
-                        <option value="Fiscal">Fiscal (NF-e, NFC-e)</option>
-                        <option value="Banco de Dados">Banco de Dados (SQL)</option>
-                        <option value="Periféricos">Periféricos (Balanças, Impressoras)</option>
-                        <option value="Instalação">Instalação e Sistema</option>
-                        <option value="Geral">Geral</option>
-                      </select>
+                      <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <select id="form-category" class="form-input" style="cursor: pointer; flex: 1;">
+                          <!-- Injetado dinamicamente via admin.js -->
+                        </select>
+                        <button type="button" id="btn-manage-categories" class="btn-secondary" style="width: auto; padding: 0.6rem 0.85rem;" title="Gerenciar Categorias">
+                          <strong>+</strong>
+                        </button>
+                      </div>
                     </div>
                     <div class="form-group">
                       <label for="form-tags" class="form-label">Tags de Pesquisa (separadas por vírgula)</label>
@@ -234,7 +246,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    Converter do Discord
+                    Converter Instruções
                   </button>
                 </div>
               </div>
@@ -336,6 +348,52 @@
             </div>
           </div>
 
+          <!-- ABA C: GERENCIAR OPERADORES (USUÁRIOS) -->
+          <div id="tab-users-content" class="admin-tab-content-wrapper hidden">
+            <div class="admin-split">
+              <!-- Esquerda: Lista de Usuários -->
+              <aside class="admin-list-column">
+                <div class="column-header">
+                  <h3 style="font-size: 0.95rem; font-weight: 600;">Operadores Cadastrados</h3>
+                </div>
+                <div id="users-list-container" class="kb-list">
+                  <!-- Injetado via admin.js -->
+                </div>
+              </aside>
+
+              <!-- Direita: Formulário de Cadastro -->
+              <main class="admin-form-column">
+                <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--inovar-red); text-align: left;">Cadastrar Novo Operador</h3>
+                <form id="user-form" onsubmit="event.preventDefault();" style="text-align: left;">
+                  <div class="form-group">
+                    <label for="user-username-input" class="form-label">Nome de Usuário (Login)</label>
+                    <input type="text" id="user-username-input" class="form-input" placeholder="Ex: alisson, guilherme..." autocomplete="off" required>
+                  </div>
+                  
+                  <div class="form-grid-2" style="margin-top: 1rem;">
+                    <div class="form-group">
+                      <label for="user-password-input" class="form-label">Senha de Acesso</label>
+                      <input type="password" id="user-password-input" class="form-input" placeholder="Senha do operador..." autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="user-role-input" class="form-label">Tipo de Conta (Cargo)</label>
+                      <select id="user-role-input" class="form-input" style="cursor: pointer;">
+                        <option value="NORMAL">NORMAL (Acesso apenas ao Chat)</option>
+                        <option value="ADM">ADM (Acesso ao Painel Admin)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-actions-bar" style="margin-top: 1.75rem;">
+                    <button type="button" id="btn-save-user" class="btn-primary" style="width: auto; padding: 0.65rem 2.25rem;">
+                      Cadastrar Operador
+                    </button>
+                  </div>
+                </form>
+              </main>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -366,16 +424,45 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: IMPORTADOR DO DISCORD ================= -->
+  <!-- ================= MODAL: GERENCIAR CATEGORIAS ================= -->
+  <div id="categories-modal-overlay" class="discord-import-overlay hidden">
+    <div class="discord-import-card" style="max-width: 420px; animation: scaleIn var(--transition-fast);">
+      <h3 class="admin-modal-title" style="text-align: left; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--inovar-red);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        Gerenciar Categorias
+      </h3>
+      <p class="admin-modal-desc" style="text-align: left; margin-bottom: 1rem;">Adicione ou exclua categorias da sua base de conhecimentos local.</p>
+      
+      <!-- Lista de Categorias -->
+      <div id="categories-list-container" style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; border: 1px solid var(--border-color); padding: 0.6rem; border-radius: var(--radius-md); background: rgba(0, 0, 0, 0.25);">
+        <!-- Injetado via admin.js -->
+      </div>
+
+      <!-- Formulário de Adicionar -->
+      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.25rem; text-align: left;">
+        <input type="text" id="new-category-input" class="form-input" placeholder="Ex: APIs e Integrações..." autocomplete="off" style="flex: 1;">
+        <button type="button" id="btn-add-category" class="btn-primary" style="width: auto; padding: 0.6rem 1.25rem;">Adicionar</button>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 0;">
+        <button id="btn-close-categories-modal" class="btn-secondary" style="flex: 1;">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONVERSOR DE INSTRUÇÕES ================= -->
   <div id="discord-import-overlay" class="discord-import-overlay hidden">
     <div class="discord-import-card">
       <h3 class="admin-modal-title" style="text-align: left; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: #5865F2;">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
-        Conversor de Mensagem do Discord
+        Converter Instruções
       </h3>
-      <p class="admin-modal-desc" style="text-align: left; margin-bottom: 1.25rem;">Cole a postagem copiada do Discord abaixo. Nós analisaremos o texto, extrairemos o título, as tags prováveis e a solução estruturada.</p>
+      <p class="admin-modal-desc" style="text-align: left; margin-bottom: 1.25rem;">Cole o texto ou a postagem copiada abaixo. Nós analisaremos o texto, extrairemos o título, as tags prováveis e a solução estruturada.</p>
 
       <div class="form-group">
         <textarea id="discord-paste-area" class="form-input discord-textarea" placeholder="Cole aqui o texto da postagem do Discord... (ex: **Erro de Timeout NF-e**...)"></textarea>

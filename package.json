@@ -1,5 +1,5 @@
 {
-  "name": "inovar-assist",
+  "name": "inovar-assistente",
   "version": "1.0.0",
   "description": "Assistente Inteligente de Suporte - Sistema Inovar",
   "main": "main.js",
@@ -15,11 +15,12 @@
   },
   "build": {
     "appId": "com.inovar.assist",
-    "productName": "Inovar Assist",
+    "productName": "Inovar Assistente",
     "directories": {
       "output": "dist"
     },
     "win": {
+      "artifactName": "Inovar Assistente v1.0.${ext}",
       "target": [
         {
           "target": "nsis",
@@ -37,7 +38,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Inovar Assist"
+      "shortcutName": "Inovar Assistente"
     }
   }
 }

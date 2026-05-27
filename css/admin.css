@@ -195,8 +195,43 @@
   cursor: pointer;
   transition: var(--transition-fast);
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.kb-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
   gap: 0.2rem;
+}
+
+.kb-item-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+  opacity: 0;
+}
+
+.kb-item-delete-btn:hover {
+  color: var(--color-danger);
+  background-color: rgba(255, 51, 51, 0.1);
+  opacity: 1 !important;
+}
+
+.kb-item-card:hover .kb-item-delete-btn {
+  opacity: 0.6;
 }
 
 .kb-item-card:hover {

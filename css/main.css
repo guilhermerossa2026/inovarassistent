@@ -20,19 +20,13 @@ body {
   position: relative;
 }
 
-/* Moldura Principal do App (Altamente Fluida e Responsiva) */
+/* Moldura Principal do App (100% Tela Cheia, Fluida e Sem Bordas) */
 .app-container {
-  width: 95vw;
-  max-width: 1300px; /* Expandido para acomodar perfeitamente telas maiores ou TVs */
-  height: 90vh; /* Aumentado aproveitamento de tela vertical */
-  max-height: 840px; /* Reduzido o limite máximo de altura para caber com folga em laptops */
-  min-height: 480px; /* Garante usabilidade mínima */
+  width: 100vw;
+  height: 100vh;
   background-color: var(--bg-panel-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(230, 0, 0, 0.35); /* Borda vermelha mais translúcida, limpa e moderna */
-  box-shadow: var(--shadow-main), var(--shadow-red);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -302,4 +296,90 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--inovar-red);
+}
+
+/* --- SISTEMA DE TOAST PREMIUM --- */
+.toast-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 420px;
+  background-color: rgba(17, 17, 20, 0.96);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.success {
+  border-left: 4px solid var(--color-success);
+  box-shadow: 0 4px 15px rgba(0, 204, 102, 0.08);
+}
+
+.toast.error {
+  border-left: 4px solid var(--color-danger);
+  box-shadow: 0 4px 15px rgba(255, 51, 51, 0.08);
+}
+
+.toast.info {
+  border-left: 4px solid var(--color-info);
+  box-shadow: 0 4px 15px rgba(0, 191, 255, 0.08);
+}
+
+.toast.warning {
+  border-left: 4px solid var(--color-warning);
+  box-shadow: 0 4px 15px rgba(255, 204, 0, 0.08);
+}
+
+.toast-message {
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem;
+  transition: var(--transition-fast);
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(60px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }

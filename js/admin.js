@@ -9,6 +9,7 @@ class AdminController {
     
     this._initElements();
     this._bindEvents();
+    this.populateCategoriesSelect();
   }
 
   _initElements() {
@@ -51,6 +52,23 @@ class AdminController {
     this.btnProcessDiscord = document.getElementById('btn-process-discord');
     this.btnCancelDiscord = document.getElementById('btn-cancel-discord');
     
+    // Gerenciador de Categorias Dinâmicas
+    this.btnManageCategories = document.getElementById('btn-manage-categories');
+    this.categoriesModalOverlay = document.getElementById('categories-modal-overlay');
+    this.categoriesListContainer = document.getElementById('categories-list-container');
+    this.newCategoryInput = document.getElementById('new-category-input');
+    this.btnAddCategory = document.getElementById('btn-add-category');
+    this.btnCloseCategoriesModal = document.getElementById('btn-close-categories-modal');
+    
+    // Gerenciador de Operadores (Usuários)
+    this.tabUsersBtn = document.getElementById('tab-users-btn');
+    this.tabUsersContent = document.getElementById('tab-users-content');
+    this.usersListContainer = document.getElementById('users-list-container');
+    this.userUsernameInput = document.getElementById('user-username-input');
+    this.userPasswordInput = document.getElementById('user-password-input');
+    this.userRoleInput = document.getElementById('user-role-input');
+    this.btnSaveUser = document.getElementById('btn-save-user');
+    
     // Métricas/Relatórios
     this.metricTotalSearches = document.getElementById('metric-total-searches');
     this.metricResolveRate = document.getElementById('metric-resolve-rate');
@@ -74,6 +92,7 @@ class AdminController {
     // Controle de Abas
     this.tabArticlesBtn.addEventListener('click', () => this.switchTab('articles'));
     this.tabReportsBtn.addEventListener('click', () => this.switchTab('reports'));
+    this.tabUsersBtn.addEventListener('click', () => this.switchTab('users'));
 
     // CRUD Artigos
     this.adminSearchInput.addEventListener('input', () => this.renderArticlesList());
@@ -90,12 +109,32 @@ class AdminController {
     this.btnCancelDiscord.addEventListener('click', () => this.openDiscordModal(false));
     this.btnProcessDiscord.addEventListener('click', () => this.processDiscordText());
     
+    // Gerenciador de Categorias
+    this.btnManageCategories.addEventListener('click', () => this.openCategoriesModal(true));
+    this.btnCloseCategoriesModal.addEventListener('click', () => this.openCategoriesModal(false));
+    this.btnAddCategory.addEventListener('click', () => this.addNewCategory());
+    this.newCategoryInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.addNewCategory();
+    });
+    
+    // Gerenciador de Operadores
+    this.btnSaveUser.addEventListener('click', () => this.handleRegisterUser());
+    this.userPasswordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.handleRegisterUser();
+    });
+    
     // Limpeza de logs
     this.btnClearLogs.addEventListener('click', () => this.clearLogs());
   }
 
   // --- CONTROLE DE SENHA & PORTAL ---
   enterAdmin() {
+    const user = window.storageService.getCurrentUser();
+    if (!user || user.role !== 'ADM') {
+      window.showToast('Acesso negado. Apenas administradores (ADM) podem acessar o Painel Admin.', 'error');
+      return;
+    }
+    
     this.adminView.classList.remove('hidden');
     this.chatView.classList.add('hidden');
     
@@ -142,18 +181,26 @@ class AdminController {
   switchTab(tab) {
     this.currentTab = tab;
     
+    this.tabArticlesBtn.classList.remove('active');
+    this.tabReportsBtn.classList.remove('active');
+    this.tabUsersBtn.classList.remove('active');
+    
+    this.tabArticlesContent.classList.add('hidden');
+    this.tabReportsContent.classList.add('hidden');
+    this.tabUsersContent.classList.add('hidden');
+    
     if (tab === 'articles') {
       this.tabArticlesBtn.classList.add('active');
-      this.tabReportsBtn.classList.remove('active');
       this.tabArticlesContent.classList.remove('hidden');
-      this.tabReportsContent.classList.add('hidden');
       this.renderArticlesList();
-    } else {
-      this.tabArticlesBtn.classList.remove('active');
+    } else if (tab === 'reports') {
       this.tabReportsBtn.classList.add('active');
-      this.tabArticlesContent.classList.add('hidden');
       this.tabReportsContent.classList.remove('hidden');
       this.loadReports();
+    } else if (tab === 'users') {
+      this.tabUsersBtn.classList.add('active');
+      this.tabUsersContent.classList.remove('hidden');
+      this.renderUsersList();
     }
   }
 
@@ -182,14 +229,31 @@ class AdminController {
       card.dataset.id = item.id;
       
       card.innerHTML = `
-        <div class="kb-item-title">${this._escapeHTML(item.title)}</div>
-        <div class="kb-item-meta">
-          <span class="kb-item-category">${this._escapeHTML(item.category)}</span>
-          <span>${item.tags.length} tags</span>
+        <div class="kb-item-content">
+          <div class="kb-item-title">${this._escapeHTML(item.title)}</div>
+          <div class="kb-item-meta">
+            <span class="kb-item-category">${this._escapeHTML(item.category)}</span>
+            <span>${item.tags.length} tags</span>
+          </div>
         </div>
+        <button class="kb-item-delete-btn" title="Excluir Artigo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
       `;
       
       card.addEventListener('click', () => this.selectArticle(item.id));
+      
+      const deleteBtn = card.querySelector('.kb-item-delete-btn');
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteArticleDirectly(item.id);
+      });
+      
       this.kbListContainer.appendChild(card);
     });
   }
@@ -234,7 +298,16 @@ class AdminController {
     // Reseta inputs
     this.formArticleId.value = '';
     this.formTitle.value = '';
-    this.formCategory.value = 'Fiscal'; // Padrão
+    
+    const categories = window.storageService.getCategories();
+    if (categories.includes('Fiscal')) {
+      this.formCategory.value = 'Fiscal';
+    } else if (categories.includes('Geral')) {
+      this.formCategory.value = 'Geral';
+    } else if (categories.length > 0) {
+      this.formCategory.value = categories[0];
+    }
+    
     this.formTags.value = '';
     this.formDescription.value = '';
     this.formSolution.value = '';
@@ -257,7 +330,7 @@ class AdminController {
     };
 
     if (!itemData.title || !itemData.solution) {
-      alert('Por favor, preencha o Título e o Passo a Passo da Solução.');
+      window.showToast('Por favor, preencha o Título e o Passo a Passo da Solução.', 'warning');
       return;
     }
 
@@ -265,13 +338,13 @@ class AdminController {
       // Editar existente
       const success = window.storageService.updateKnowledge(id, itemData);
       if (success) {
-        alert('Artigo de conhecimento atualizado com sucesso!');
+        window.showToast('Artigo de conhecimento atualizado com sucesso!', 'success');
       }
     } else {
       // Adicionar novo
       const newItem = window.storageService.addKnowledge(itemData);
       this.selectedArticleId = newItem.id;
-      alert('Novo artigo cadastrado com sucesso!');
+      window.showToast('Novo artigo cadastrado com sucesso!', 'success');
     }
 
     this.renderArticlesList();
@@ -289,8 +362,26 @@ class AdminController {
     if (confirm('Tem certeza absoluta de que deseja excluir este artigo da base de conhecimento?')) {
       const success = window.storageService.deleteKnowledge(id);
       if (success) {
-        alert('Artigo excluído com sucesso!');
+        window.showToast('Artigo excluído com sucesso!', 'success');
         this.resetFormForNew();
+        this.renderArticlesList();
+      }
+    }
+  }
+
+  deleteArticleDirectly(id) {
+    if (!id) return;
+    const kb = window.storageService.getKnowledge();
+    const item = kb.find(x => x.id === id);
+    if (!item) return;
+
+    if (confirm(`Tem certeza absoluta de que deseja excluir o artigo "${item.title}"?`)) {
+      const success = window.storageService.deleteKnowledge(id);
+      if (success) {
+        window.showToast('Artigo excluído com sucesso!', 'success');
+        if (this.formArticleId.value === id) {
+          this.resetFormForNew();
+        }
         this.renderArticlesList();
       }
     }
@@ -407,11 +498,11 @@ class AdminController {
       const content = event.target.result;
       const success = window.storageService.importDatabase(content);
       if (success) {
-        alert('Banco de Dados da Base de Conhecimento importado com sucesso!');
+        window.showToast('Banco de Dados da Base de Conhecimento importado com sucesso!', 'success');
         this.renderArticlesList();
         this.resetFormForNew();
       } else {
-        alert('Erro ao importar arquivo. Certifique-se de que o arquivo JSON do backup está íntegro e no formato correto.');
+        window.showToast('Erro ao importar backup. Verifique se o arquivo JSON está correto.', 'error');
       }
     };
     reader.readAsText(file);
@@ -432,7 +523,7 @@ class AdminController {
   processDiscordText() {
     const text = this.discordPasteArea.value.trim();
     if (!text) {
-      alert('Por favor, cole um texto do Discord.');
+      window.showToast('Por favor, cole um texto do Discord.', 'warning');
       return;
     }
 
@@ -510,9 +601,146 @@ class AdminController {
     // Fecha modal do Discord e atualiza botões
     this.discordImportOverlay.classList.add('hidden');
     this.btnDeleteArticle.classList.add('hidden');
-    this.btnSaveArticle.innerHTML = 'Cadastrar Novo Artigo (do Discord)';
+    this.btnSaveArticle.innerHTML = 'Cadastrar Novo Artigo';
     
-    alert('Texto do Discord processado! Verifique e ajuste os campos preenchidos antes de salvar.');
+    window.showToast('Texto do Discord processado! Verifique e ajuste os campos antes de salvar.', 'info');
+  }
+
+  // --- GERENCIAMENTO DE CATEGORIAS DINÂMICAS ---
+  populateCategoriesSelect() {
+    const select = this.formCategory;
+    if (!select) return;
+    const currentValue = select.value;
+    select.innerHTML = '';
+    
+    const categories = window.storageService.getCategories();
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      select.appendChild(option);
+    });
+    
+    if (categories.includes(currentValue)) {
+      select.value = currentValue;
+    } else if (categories.includes('Geral')) {
+      select.value = 'Geral';
+    } else if (categories.length > 0) {
+      select.value = categories[0];
+    }
+  }
+
+  openCategoriesModal(open) {
+    if (open) {
+      this.categoriesModalOverlay.classList.remove('hidden');
+      this.newCategoryInput.value = '';
+      this.renderCategoriesModalList();
+      setTimeout(() => this.newCategoryInput.focus(), 100);
+    } else {
+      this.categoriesModalOverlay.classList.add('hidden');
+    }
+  }
+
+  renderCategoriesModalList() {
+    const categories = window.storageService.getCategories();
+    this.categoriesListContainer.innerHTML = '';
+    
+    if (categories.length === 0) {
+      this.categoriesListContainer.innerHTML = '<div style="padding: 0.5rem; text-align: center; color: var(--text-muted); font-size: 0.8rem;">Nenhuma categoria cadastrada.</div>';
+      return;
+    }
+    
+    categories.forEach(cat => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.justifyContent = 'space-between';
+      row.style.padding = '0.4rem 0.6rem';
+      row.style.background = 'rgba(255, 255, 255, 0.02)';
+      row.style.border = '1px solid var(--border-color)';
+      row.style.borderRadius = 'var(--radius-sm)';
+      row.style.fontSize = '0.825rem';
+      row.style.gap = '0.5rem';
+      
+      row.innerHTML = `
+        <span style="color: var(--text-primary); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${this._escapeHTML(cat)}</span>
+        <button type="button" class="kb-item-delete-btn" style="opacity: 0.7; padding: 0.2rem; border-radius: var(--radius-sm); background: none; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted);" title="Excluir Categoria">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
+      `;
+      
+      const delBtn = row.querySelector('.kb-item-delete-btn');
+      delBtn.addEventListener('click', () => this.deleteCategoryDirectly(cat));
+      // Estilização direta de hover no lixo das categorias
+      delBtn.addEventListener('mouseenter', () => {
+        delBtn.style.color = 'var(--color-danger)';
+        delBtn.style.backgroundColor = 'rgba(255, 51, 51, 0.1)';
+      });
+      delBtn.addEventListener('mouseleave', () => {
+        delBtn.style.color = 'var(--text-muted)';
+        delBtn.style.backgroundColor = 'transparent';
+      });
+      
+      this.categoriesListContainer.appendChild(row);
+    });
+  }
+
+  addNewCategory() {
+    const name = this.newCategoryInput.value.trim();
+    if (!name) {
+      window.showToast('Por favor, informe um nome para a categoria.', 'warning');
+      return;
+    }
+    
+    if (name.length > 30) {
+      window.showToast('O nome da categoria não pode exceder 30 caracteres.', 'warning');
+      return;
+    }
+    
+    const success = window.storageService.addCategory(name);
+    if (success) {
+      window.showToast('Categoria adicionada com sucesso!', 'success');
+      this.newCategoryInput.value = '';
+      this.renderCategoriesModalList();
+      this.populateCategoriesSelect();
+      this.formCategory.value = name;
+    } else {
+      window.showToast('Esta categoria já existe na lista.', 'warning');
+    }
+  }
+
+  deleteCategoryDirectly(name) {
+    if (name === 'Geral') {
+      window.showToast('A categoria "Geral" é padrão do sistema e não pode ser excluída.', 'warning');
+      return;
+    }
+    
+    if (confirm(`Tem certeza absoluta de que deseja excluir a categoria "${name}"? Artigos vinculados a ela serão movidos automaticamente para "Geral".`)) {
+      const kb = window.storageService.getKnowledge();
+      let updatedCount = 0;
+      kb.forEach(art => {
+        if (art.category === name) {
+          art.category = 'Geral';
+          window.storageService.updateKnowledge(art.id, art);
+          updatedCount++;
+        }
+      });
+      
+      const success = window.storageService.deleteCategory(name);
+      if (success) {
+        window.showToast(`Categoria excluída com sucesso! ${updatedCount > 0 ? updatedCount + ' artigo(s) movido(s) para Geral.' : ''}`, 'success');
+        this.renderCategoriesModalList();
+        this.populateCategoriesSelect();
+        this.renderArticlesList();
+      } else {
+        window.showToast('Erro ao excluir a categoria.', 'error');
+      }
+    }
   }
 
   // --- AUXILIARES ---
@@ -541,9 +769,102 @@ class AdminController {
       return isoString;
     }
   }
+
+  // --- GERENCIAMENTO DE OPERADORES (USUÁRIOS) ---
+  renderUsersList() {
+    const users = window.storageService.getUsers();
+    this.usersListContainer.innerHTML = '';
+    
+    if (users.length === 0) {
+      this.usersListContainer.innerHTML = '<div style="padding: 1rem; color: var(--text-muted); font-size: 0.85rem; text-align: center;">Nenhum operador cadastrado.</div>';
+      return;
+    }
+    
+    users.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'kb-item-card';
+      card.style.cursor = 'default';
+      
+      const isMaster = u.username.toLowerCase() === 'guilherme';
+      const deleteButtonHTML = isMaster ? '' : `
+        <button class="kb-item-delete-btn" style="opacity: 0.6;" title="Excluir Operador">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
+      `;
+      
+      card.innerHTML = `
+        <div class="kb-item-content">
+          <div class="kb-item-title" style="font-weight: 600;">${this._escapeHTML(u.username)}</div>
+          <div class="kb-item-meta">
+            <span class="kb-item-category" style="background-color: ${u.role === 'ADM' ? 'rgba(230, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)'}; color: ${u.role === 'ADM' ? 'var(--inovar-red)' : 'var(--text-secondary)'}; font-size: 0.65rem; padding: 0.1rem 0.3rem;">${u.role}</span>
+            <span>Senha: ${this._escapeHTML(u.password)}</span>
+          </div>
+        </div>
+        ${deleteButtonHTML}
+      `;
+      
+      if (!isMaster) {
+        const delBtn = card.querySelector('.kb-item-delete-btn');
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.handleDeleteUser(u.username);
+        });
+      }
+      
+      this.usersListContainer.appendChild(card);
+    });
+  }
+
+  handleRegisterUser() {
+    const username = this.userUsernameInput.value.trim();
+    const password = this.userPasswordInput.value.trim();
+    const role = this.userRoleInput.value;
+    
+    if (!username || !password) {
+      window.showToast('Por favor, preencha todos os campos do operador.', 'warning');
+      return;
+    }
+    
+    if (username.length > 25) {
+      window.showToast('O nome de usuário não pode exceder 25 caracteres.', 'warning');
+      return;
+    }
+    
+    const success = window.storageService.addUser(username, password, role);
+    if (success) {
+      window.showToast(`Operador "${username}" cadastrado com sucesso!`, 'success');
+      this.userUsernameInput.value = '';
+      this.userPasswordInput.value = '';
+      this.userRoleInput.value = 'NORMAL';
+      this.renderUsersList();
+    } else {
+      window.showToast('Este nome de usuário já está sendo utilizado.', 'warning');
+    }
+  }
+
+  handleDeleteUser(username) {
+    if (confirm(`Tem certeza absoluta de que deseja excluir o operador "${username}" do sistema? Ele perderá acesso ao chat.`)) {
+      const success = window.storageService.deleteUser(username);
+      if (success) {
+        window.showToast('Operador excluído com sucesso!', 'success');
+        this.renderUsersList();
+      } else {
+        window.showToast('Erro ao excluir o operador.', 'error');
+      }
+    }
+  }
 }
 
 // Expõe globalmente após o carregamento do DOM para evitar falhas de elemento
 document.addEventListener('DOMContentLoaded', () => {
-  window.adminController = new AdminController();
+  try {
+    window.adminController = new AdminController();
+  } catch (e) {
+    console.error('Erro ao inicializar AdminController:', e);
+  }
 });

@@ -2,6 +2,8 @@
 
 class ChatController {
   constructor() {
+    // Força limpeza de sessão no início para que sempre peça login ao entrar
+    window.storageService.clearCurrentUser();
     this.activeUser = null;
     this.lastLoggedSearchId = null;
     this.lastMatchedArticleId = null;
@@ -18,6 +20,7 @@ class ChatController {
     
     // Inputs de Login
     this.loginInput = document.getElementById('login-username');
+    this.loginPasswordInput = document.getElementById('login-password');
     this.btnLoginSubmit = document.getElementById('btn-login-submit');
     
     // Elementos de Chat
@@ -36,6 +39,11 @@ class ChatController {
     // Submeter Identificação/Login
     this.btnLoginSubmit.addEventListener('click', () => this.handleLogin());
     this.loginInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        if (this.loginPasswordInput) this.loginPasswordInput.focus();
+      }
+    });
+    this.loginPasswordInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') this.handleLogin();
     });
 
@@ -80,6 +88,7 @@ class ChatController {
       this.loginView.classList.remove('hidden');
       this.chatView.classList.add('hidden');
       this.loginInput.value = '';
+      if (this.loginPasswordInput) this.loginPasswordInput.value = '';
       // Garante foco automático no input de login com pequeno timeout
       setTimeout(() => {
         if (this.loginInput) this.loginInput.focus();
@@ -88,19 +97,22 @@ class ChatController {
   }
 
   handleLogin() {
-    const name = this.loginInput.value.trim();
-    if (!name) {
-      alert('Por favor, informe seu nome para iniciar o atendimento.');
+    const username = this.loginInput.value.trim();
+    const password = this.loginPasswordInput ? this.loginPasswordInput.value.trim() : '';
+    if (!username || !password) {
+      window.showToast('Por favor, informe o usuário e a senha.', 'warning');
       return;
     }
     
-    const success = window.storageService.setCurrentUser(name);
-    if (success) {
+    const user = window.storageService.validateLogin(username, password);
+    if (user) {
       this.checkUserSession();
       // Garante foco no chat após logar com sucesso
       setTimeout(() => {
         if (this.chatInput) this.chatInput.focus();
       }, 100);
+    } else {
+      window.showToast('Usuário ou senha incorretos!', 'error');
     }
   }
 
@@ -113,9 +125,9 @@ class ChatController {
   }
 
   updateHeader() {
-    if (this.activeUser) {
+    if (this.activeUser && this.activeUser.username) {
       this.headerUserIndicator.classList.remove('hidden');
-      this.headerUserName.textContent = this.activeUser.toUpperCase();
+      this.headerUserName.textContent = this.activeUser.username.toUpperCase();
     } else {
       this.headerUserIndicator.classList.add('hidden');
     }
@@ -126,14 +138,14 @@ class ChatController {
     this.chatHistory.innerHTML = '';
     
     const greetingHTML = `
-      Olá, técnico **${this.activeUser}**. Sou o assistente de suporte da **Inovar**.
+      Olá, técnico **${this.activeUser ? this.activeUser.username : ''}**. Sou o assistente de suporte da **Inovar**.
       
       Estou conectado à nossa base de conhecimentos central offline.
       
-      Como posso te ajudar a resolver o chamado do Sistema Inovar de hoje? *Escolha um atalho rápido de categorias abaixo ou digite o erro diretamente.*
+      Como posso te ajudar a resolver o chamado do Sistema Inovar de hoje? *Digite o erro ou palavra-chave diretamente abaixo para eu buscar a solução.*
     `;
 
-    this.addBotResponseBubble(greetingHTML, null, false, true); // Passa true para renderizar chips rápidos
+    this.addBotResponseBubble(greetingHTML, null, false, false); // Passa false para NÃO renderizar chips rápidos
   }
 
   // --- OPERAÇÕES E BUSCAS NO CHAT ---
@@ -626,5 +638,9 @@ class ChatController {
 
 // Expõe e executa após os elementos da página carregarem
 document.addEventListener('DOMContentLoaded', () => {
-  window.chatController = new ChatController();
+  try {
+    window.chatController = new ChatController();
+  } catch (e) {
+    console.error('Erro ao inicializar ChatController:', e);
+  }
 });

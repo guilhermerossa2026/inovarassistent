@@ -1,7 +1,38 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 
 function createWindow() {
+  const template = [
+    {
+      label: 'Editar',
+      submenu: [
+        { role: 'undo', label: 'Desfazer' },
+        { role: 'redo', label: 'Refazer' },
+        { type: 'separator' },
+        { role: 'cut', label: 'Recortar' },
+        { role: 'copy', label: 'Copiar' },
+        { role: 'paste', label: 'Colar' },
+        { role: 'selectAll', label: 'Selecionar Tudo' }
+      ]
+    },
+    {
+      label: 'Visualizar',
+      submenu: [
+        { role: 'reload', label: 'Recarregar' },
+        { role: 'forcereload', label: 'Forçar Recarregamento' },
+        { role: 'toggledevtools', label: 'Ferramentas do Desenvolvedor' },
+        { type: 'separator' },
+        { role: 'resetzoom', label: 'Resetar Zoom' },
+        { role: 'zoomin', label: 'Aumentar Zoom' },
+        { role: 'zoomout', label: 'Diminuir Zoom' },
+        { type: 'separator' },
+        { role: 'togglefullscreen', label: 'Tela Cheia' }
+      ]
+    }
+  ];
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+
   const mainWindow = new BrowserWindow({
     width: 1180,
     height: 800,
