@@ -110,3 +110,24 @@
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* --- ADICIONAIS DE TEMAS DINÂMICOS (ACCENTS) --- */
+body.theme-blue {
+  --inovar-red: #0088ff;
+  --inovar-red-hover: #33a2ff;
+  --inovar-red-dark: #005eb3;
+  --inovar-red-glow: rgba(0, 136, 255, 0.15);
+  --inovar-red-glow-strong: rgba(0, 136, 255, 0.3);
+  --shadow-red: 0 0 25px rgba(0, 136, 255, 0.12);
+  --border-color-focus: #0088ff;
+}
+
+body.theme-green {
+  --inovar-red: #00cc66;
+  --inovar-red-hover: #1aff8c;
+  --inovar-red-dark: #00994d;
+  --inovar-red-glow: rgba(0, 204, 102, 0.12);
+  --inovar-red-glow-strong: rgba(0, 204, 102, 0.28);
+  --shadow-red: 0 0 25px rgba(0, 204, 102, 0.1);
+  --border-color-focus: #00cc66;
+}

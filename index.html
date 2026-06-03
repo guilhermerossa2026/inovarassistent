@@ -63,7 +63,12 @@
             <label for="login-username" class="form-label">Nome de Usuário</label>
             <input type="text" id="login-username" class="form-input" placeholder="Digite seu usuário..." autocomplete="off" required style="margin-bottom: 0.75rem;">
             <label for="login-password" class="form-label">Senha de Acesso</label>
-            <input type="password" id="login-password" class="form-input" placeholder="••••" autocomplete="off" required>
+            <input type="password" id="login-password" class="form-input" placeholder="••••" autocomplete="off" required style="margin-bottom: 0.75rem;">
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.25rem;">
+              <input type="checkbox" id="login-save-session" style="width: auto; cursor: pointer;">
+              <label for="login-save-session" class="form-label" style="margin-bottom: 0; cursor: pointer; text-transform: none; font-size: 0.8rem; letter-spacing: normal; color: var(--text-secondary);">Lembrar usuário e senha neste dispositivo</label>
+            </div>
           </div>
 
           <button id="btn-login-submit" class="btn-primary">
@@ -129,14 +134,12 @@
               </svg>
               Relatórios & Métricas
             </button>
-            <button id="tab-users-btn" class="admin-tab-btn">
+            <button id="tab-settings-btn" class="admin-tab-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
-              Gerenciar Usuários
+              Configurações do Software
             </button>
           </div>
 
@@ -348,8 +351,8 @@
             </div>
           </div>
 
-          <!-- ABA C: GERENCIAR OPERADORES (USUÁRIOS) -->
-          <div id="tab-users-content" class="admin-tab-content-wrapper hidden">
+          <!-- ABA C: CONFIGURAÇÕES DO SOFTWARE -->
+          <div id="tab-settings-content" class="admin-tab-content-wrapper hidden">
             <div class="admin-split">
               <!-- Esquerda: Lista de Usuários -->
               <aside class="admin-list-column">
@@ -361,35 +364,81 @@
                 </div>
               </aside>
 
-              <!-- Direita: Formulário de Cadastro -->
-              <main class="admin-form-column">
-                <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--inovar-red); text-align: left;">Cadastrar Novo Operador</h3>
-                <form id="user-form" onsubmit="event.preventDefault();" style="text-align: left;">
-                  <div class="form-group">
-                    <label for="user-username-input" class="form-label">Nome de Usuário (Login)</label>
-                    <input type="text" id="user-username-input" class="form-input" placeholder="Ex: alisson, guilherme..." autocomplete="off" required>
-                  </div>
-                  
-                  <div class="form-grid-2" style="margin-top: 1rem;">
+              <!-- Direita: Formulário de Cadastro + Configurações Globais -->
+              <main class="admin-form-column" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                
+                <!-- SEÇÃO 1: CADASTRO DE OPERADORES -->
+                <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem;">
+                  <h3 id="user-form-title" style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; color: var(--inovar-red); text-align: left;">Cadastrar Novo Operador</h3>
+                  <form id="user-form" onsubmit="event.preventDefault();" style="text-align: left;">
                     <div class="form-group">
-                      <label for="user-password-input" class="form-label">Senha de Acesso</label>
-                      <input type="password" id="user-password-input" class="form-input" placeholder="Senha do operador..." autocomplete="off" required>
+                      <label for="user-username-input" class="form-label">Nome de Usuário (Login)</label>
+                      <input type="text" id="user-username-input" class="form-input" placeholder="Ex: alisson, guilherme..." autocomplete="off" required>
                     </div>
-                    <div class="form-group">
-                      <label for="user-role-input" class="form-label">Tipo de Conta (Cargo)</label>
-                      <select id="user-role-input" class="form-input" style="cursor: pointer;">
-                        <option value="NORMAL">NORMAL (Acesso apenas ao Chat)</option>
-                        <option value="ADM">ADM (Acesso ao Painel Admin)</option>
-                      </select>
+                    
+                    <div class="form-grid-2" style="margin-top: 0.75rem;">
+                      <div class="form-group">
+                        <label for="user-password-input" class="form-label">Senha de Acesso</label>
+                        <input type="password" id="user-password-input" class="form-input" placeholder="Senha do operador..." autocomplete="off" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="user-role-input" class="form-label">Tipo de Conta (Cargo)</label>
+                        <select id="user-role-input" class="form-input" style="cursor: pointer;">
+                          <option value="NORMAL">SUPORTE (Acesso apenas ao Chat)</option>
+                          <option value="ADM">ADM (Acesso ao Painel Admin)</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="form-actions-bar" style="margin-top: 1.75rem;">
-                    <button type="button" id="btn-save-user" class="btn-primary" style="width: auto; padding: 0.65rem 2.25rem;">
-                      Cadastrar Operador
-                    </button>
-                  </div>
-                </form>
+                    <div class="form-actions-bar" style="margin-top: 1rem; border-top: none; padding-top: 0; display: flex; gap: 0.5rem; align-items: center;">
+                      <button type="button" id="btn-save-user" class="btn-primary" style="width: auto; padding: 0.65rem 2.25rem;">
+                        Cadastrar Operador
+                      </button>
+                      <button type="button" id="btn-cancel-user-edit" class="btn-secondary hidden" style="width: auto; padding: 0.65rem 1.5rem;">
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- SEÇÃO 2: PARÂMETROS DO MAINFRAME -->
+                <div>
+                  <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; color: var(--inovar-red); text-align: left;">Parâmetros do Mainframe</h3>
+                  <form onsubmit="event.preventDefault();" style="text-align: left;">
+                    <div class="form-grid-2">
+                      <div class="form-group">
+                        <label for="settings-theme-select" class="form-label">Tema Visual do Mainframe</label>
+                        <select id="settings-theme-select" class="form-input" style="cursor: pointer;">
+                          <option value="red">Vermelho Glow (Clássico)</option>
+                          <option value="blue">Azul Cyber (Futurista)</option>
+                          <option value="green">Verde Matrix (Técnico)</option>
+                        </select>
+                      </div>
+                      
+                      <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: center; padding-top: 0.5rem;">
+                        <label class="form-label" style="margin-bottom: 0.25rem;">Opções de Inicialização</label>
+                        
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                          <input type="checkbox" id="settings-menu-bar-checkbox" style="cursor: pointer; width: auto;">
+                          <label for="settings-menu-bar-checkbox" style="font-size: 0.8rem; cursor: pointer; color: var(--text-secondary); user-select: none;">Exibir barra de menus do Electron</label>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                          <input type="checkbox" id="settings-auto-scroll-checkbox" style="cursor: pointer; width: auto;" checked>
+                          <label for="settings-auto-scroll-checkbox" style="font-size: 0.8rem; cursor: pointer; color: var(--text-secondary); user-select: none;">Habilitar auto-scroll no chat</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="form-actions-bar" style="margin-top: 1rem; justify-content: flex-start; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                      <button type="button" id="btn-reset-db" class="btn-danger" style="font-size: 0.8rem; padding: 0.5rem 1.25rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.3rem;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        Restaurar Banco de Dados
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
               </main>
             </div>
           </div>

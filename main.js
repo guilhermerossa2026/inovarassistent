@@ -1,5 +1,25 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
 const path = require('path');
+
+// Canal IPC síncrono para obter o diretório de dados do usuário
+ipcMain.on('get-user-data-path', (event) => {
+  event.returnValue = app.getPath('userData');
+});
+
+// Abrir links externos no navegador padrão do sistema
+ipcMain.on('open-external-link', (event, url) => {
+  if (url) {
+    shell.openExternal(url).catch(err => console.error("Erro ao abrir link externo:", err));
+  }
+});
+
+// Alterar visibilidade da barra de menus da janela
+ipcMain.on('set-menu-bar-visibility', (event, visible) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.setMenuBarVisibility(visible);
+  }
+});
 
 function createWindow() {
   const template = [
@@ -43,7 +63,8 @@ function createWindow() {
     show: false, // Inicia invisível para foco perfeito e sem cintilação
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 

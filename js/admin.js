@@ -4,8 +4,9 @@ class AdminController {
   constructor() {
     this.selectedArticleId = null;
     this.currentTab = 'articles'; // 'articles' ou 'reports'
-    this.correctPassword = 'inovaradmin'; // Senha padrão solicitada pelo usuário
+    this.correctPasswordHash = '7cbff456e792c5a2c4e61db1d77c1a0172dc70a92d47c72477c7a52e008d51ee'; // Hash SHA-256 da senha 'inovaradmin'
     this.isAuthenticated = false;
+    this.selectedUsername = null; // Username do operador em edição
     
     this._initElements();
     this._bindEvents();
@@ -60,14 +61,22 @@ class AdminController {
     this.btnAddCategory = document.getElementById('btn-add-category');
     this.btnCloseCategoriesModal = document.getElementById('btn-close-categories-modal');
     
-    // Gerenciador de Operadores (Usuários)
-    this.tabUsersBtn = document.getElementById('tab-users-btn');
-    this.tabUsersContent = document.getElementById('tab-users-content');
+    // Configurações do Software e Operadores
+    this.tabSettingsBtn = document.getElementById('tab-settings-btn');
+    this.tabSettingsContent = document.getElementById('tab-settings-content');
     this.usersListContainer = document.getElementById('users-list-container');
     this.userUsernameInput = document.getElementById('user-username-input');
     this.userPasswordInput = document.getElementById('user-password-input');
     this.userRoleInput = document.getElementById('user-role-input');
     this.btnSaveUser = document.getElementById('btn-save-user');
+    this.btnCancelUserEdit = document.getElementById('btn-cancel-user-edit');
+    this.userFormTitle = document.getElementById('user-form-title');
+    
+    // Configurações de Parâmetros do Mainframe
+    this.settingsThemeSelect = document.getElementById('settings-theme-select');
+    this.settingsMenuBarCheckbox = document.getElementById('settings-menu-bar-checkbox');
+    this.settingsAutoScrollCheckbox = document.getElementById('settings-auto-scroll-checkbox');
+    this.btnResetDb = document.getElementById('btn-reset-db');
     
     // Métricas/Relatórios
     this.metricTotalSearches = document.getElementById('metric-total-searches');
@@ -92,7 +101,7 @@ class AdminController {
     // Controle de Abas
     this.tabArticlesBtn.addEventListener('click', () => this.switchTab('articles'));
     this.tabReportsBtn.addEventListener('click', () => this.switchTab('reports'));
-    this.tabUsersBtn.addEventListener('click', () => this.switchTab('users'));
+    this.tabSettingsBtn.addEventListener('click', () => this.switchTab('settings'));
 
     // CRUD Artigos
     this.adminSearchInput.addEventListener('input', () => this.renderArticlesList());
@@ -122,6 +131,13 @@ class AdminController {
     this.userPasswordInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') this.handleRegisterUser();
     });
+    this.btnCancelUserEdit.addEventListener('click', () => this.resetUserForm());
+    
+    // Parâmetros do Mainframe
+    this.settingsThemeSelect.addEventListener('change', () => this.saveSettingsTheme());
+    this.settingsMenuBarCheckbox.addEventListener('change', () => this.saveSettingsMenuBar());
+    this.settingsAutoScrollCheckbox.addEventListener('change', () => this.saveSettingsAutoScroll());
+    this.btnResetDb.addEventListener('click', () => this.handleResetDatabase());
     
     // Limpeza de logs
     this.btnClearLogs.addEventListener('click', () => this.clearLogs());
@@ -148,9 +164,27 @@ class AdminController {
     }
   }
 
+  enterAdminDirectly() {
+    const user = window.storageService.getCurrentUser();
+    if (!user || user.role !== 'ADM') {
+      window.showToast('Acesso negado. Apenas administradores (ADM) podem acessar o Painel Admin.', 'error');
+      return;
+    }
+    
+    this.adminView.classList.remove('hidden');
+    this.chatView.classList.add('hidden');
+    this.isAuthenticated = true; // Login do ADM já validou o usuário
+    this.adminModalOverlay.classList.add('hidden');
+    this.loadAdminView();
+  }
+
   checkPassword() {
     const entered = this.adminPasswordInput.value;
-    if (entered === this.correctPassword) {
+    const enteredHash = window.api && typeof window.api.hashPassword === 'function'
+      ? window.api.hashPassword(entered)
+      : entered;
+
+    if (enteredHash === this.correctPasswordHash) {
       this.isAuthenticated = true;
       this.adminModalOverlay.classList.add('hidden');
       this.loadAdminView();
@@ -168,6 +202,10 @@ class AdminController {
     // Notifica o chat controller para atualizar o cabeçalho se necessário
     if (window.chatController) {
       window.chatController.updateHeader();
+      // Restaura o foco no campo de texto do chat
+      if (window.chatController.chatInput) {
+        setTimeout(() => window.chatController.chatInput.focus(), 80);
+      }
     }
   }
 
@@ -183,11 +221,11 @@ class AdminController {
     
     this.tabArticlesBtn.classList.remove('active');
     this.tabReportsBtn.classList.remove('active');
-    this.tabUsersBtn.classList.remove('active');
+    this.tabSettingsBtn.classList.remove('active');
     
     this.tabArticlesContent.classList.add('hidden');
     this.tabReportsContent.classList.add('hidden');
-    this.tabUsersContent.classList.add('hidden');
+    this.tabSettingsContent.classList.add('hidden');
     
     if (tab === 'articles') {
       this.tabArticlesBtn.classList.add('active');
@@ -197,10 +235,15 @@ class AdminController {
       this.tabReportsBtn.classList.add('active');
       this.tabReportsContent.classList.remove('hidden');
       this.loadReports();
-    } else if (tab === 'users') {
-      this.tabUsersBtn.classList.add('active');
-      this.tabUsersContent.classList.remove('hidden');
+    } else if (tab === 'settings') {
+      this.tabSettingsBtn.classList.add('active');
+      this.tabSettingsContent.classList.remove('hidden');
       this.renderUsersList();
+      this.loadSettingsInPanel();
+      // Foca automaticamente no campo de nome do operador
+      setTimeout(() => {
+        if (this.userUsernameInput) this.userUsernameInput.focus();
+      }, 80);
     }
   }
 
@@ -782,8 +825,8 @@ class AdminController {
     
     users.forEach(u => {
       const card = document.createElement('div');
-      card.className = 'kb-item-card';
-      card.style.cursor = 'default';
+      card.className = `kb-item-card ${this.selectedUsername === u.username ? 'selected' : ''}`;
+      card.dataset.username = u.username;
       
       const isMaster = u.username.toLowerCase() === 'guilherme';
       const deleteButtonHTML = isMaster ? '' : `
@@ -797,16 +840,24 @@ class AdminController {
         </button>
       `;
       
+      // Exibe "SUPORTE" em vez de "NORMAL" para o usuário
+      const displayRole = u.role === 'ADM' ? 'ADM' : 'SUPORTE';
+      const roleColor = u.role === 'ADM' ? 'var(--inovar-red)' : 'var(--text-secondary)';
+      const roleBg = u.role === 'ADM' ? 'rgba(230, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)';
+      
       card.innerHTML = `
         <div class="kb-item-content">
           <div class="kb-item-title" style="font-weight: 600;">${this._escapeHTML(u.username)}</div>
           <div class="kb-item-meta">
-            <span class="kb-item-category" style="background-color: ${u.role === 'ADM' ? 'rgba(230, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)'}; color: ${u.role === 'ADM' ? 'var(--inovar-red)' : 'var(--text-secondary)'}; font-size: 0.65rem; padding: 0.1rem 0.3rem;">${u.role}</span>
-            <span>Senha: ${this._escapeHTML(u.password)}</span>
+            <span class="kb-item-category" style="background-color: ${roleBg}; color: ${roleColor}; font-size: 0.65rem; padding: 0.1rem 0.3rem;">${displayRole}</span>
+            <span style="font-size: 0.625rem; opacity: 0.8; font-family: monospace;">Hash: ${this._escapeHTML(u.password.substring(0, 8))}...</span>
           </div>
         </div>
         ${deleteButtonHTML}
       `;
+      
+      // Permitir clicar no card para editar
+      card.addEventListener('click', () => this.selectUser(u.username));
       
       if (!isMaster) {
         const delBtn = card.querySelector('.kb-item-delete-btn');
@@ -820,13 +871,86 @@ class AdminController {
     });
   }
 
+  selectUser(username) {
+    console.log("Selecionou operador para edição:", username);
+    this.selectedUsername = username;
+    
+    // Destaca visualmente o card selecionado
+    const cards = this.usersListContainer.querySelectorAll('.kb-item-card');
+    cards.forEach(c => {
+      if (c.dataset.username === username) {
+        c.classList.add('selected');
+      } else {
+        c.classList.remove('selected');
+      }
+    });
+
+    const users = window.storageService.getUsers();
+    const user = users.find(u => u.username === username);
+    if (user) {
+      this.userUsernameInput.value = user.username;
+      
+      // O administrador padrão 'guilherme' não pode ser renomeado para manter a segurança do sistema
+      const isMaster = user.username.toLowerCase() === 'guilherme';
+      this.userUsernameInput.disabled = isMaster;
+      
+      // Limpa e instrui sobre alteração opcional de senha
+      this.userPasswordInput.value = '';
+      this.userPasswordInput.placeholder = 'Deixar em branco para manter a mesma';
+      this.userPasswordInput.required = false; 
+      
+      this.userRoleInput.value = (user.role === 'ADM') ? 'ADM' : 'NORMAL';
+      
+      if (this.userFormTitle) {
+        this.userFormTitle.textContent = `Editar Operador: ${user.username}`;
+      }
+      
+      this.btnSaveUser.innerHTML = 'Atualizar Operador';
+      this.btnCancelUserEdit.classList.remove('hidden');
+      
+      // Foca automaticamente no campo de senha para rapidez ao editar
+      setTimeout(() => {
+        if (this.userPasswordInput) this.userPasswordInput.focus();
+      }, 80);
+    }
+  }
+
+  resetUserForm() {
+    this.selectedUsername = null;
+    
+    // Remove destaques
+    const cards = this.usersListContainer.querySelectorAll('.kb-item-card');
+    cards.forEach(c => c.classList.remove('selected'));
+
+    this.userUsernameInput.value = '';
+    this.userUsernameInput.disabled = false;
+    
+    this.userPasswordInput.value = '';
+    this.userPasswordInput.placeholder = 'Senha do operador...';
+    this.userPasswordInput.required = true;
+    
+    this.userRoleInput.value = 'NORMAL';
+    
+    if (this.userFormTitle) {
+      this.userFormTitle.textContent = 'Cadastrar Novo Operador';
+    }
+    
+    this.btnSaveUser.innerHTML = 'Cadastrar Operador';
+    this.btnCancelUserEdit.classList.add('hidden');
+    
+    // Retorna o foco para o campo de nome de usuário
+    setTimeout(() => {
+      if (this.userUsernameInput) this.userUsernameInput.focus();
+    }, 80);
+  }
+
   handleRegisterUser() {
     const username = this.userUsernameInput.value.trim();
     const password = this.userPasswordInput.value.trim();
     const role = this.userRoleInput.value;
     
-    if (!username || !password) {
-      window.showToast('Por favor, preencha todos os campos do operador.', 'warning');
+    if (!username) {
+      window.showToast('Por favor, informe o nome de usuário.', 'warning');
       return;
     }
     
@@ -835,15 +959,60 @@ class AdminController {
       return;
     }
     
-    const success = window.storageService.addUser(username, password, role);
-    if (success) {
-      window.showToast(`Operador "${username}" cadastrado com sucesso!`, 'success');
-      this.userUsernameInput.value = '';
-      this.userPasswordInput.value = '';
-      this.userRoleInput.value = 'NORMAL';
-      this.renderUsersList();
+    if (this.selectedUsername) {
+      // MODO DE EDIÇÃO
+      const users = window.storageService.getUsers();
+      const idx = users.findIndex(u => u.username.toLowerCase() === this.selectedUsername.toLowerCase());
+      if (idx !== -1) {
+        const newUsernameLower = username.toLowerCase();
+        const oldUsernameLower = this.selectedUsername.toLowerCase();
+        
+        // Se mudou o nome de usuário, verifica se já existe outro operador com esse nome
+        if (newUsernameLower !== oldUsernameLower) {
+          if (users.some(u => u.username.toLowerCase() === newUsernameLower)) {
+            window.showToast('Este nome de usuário já está sendo utilizado por outro operador.', 'warning');
+            return;
+          }
+          users[idx].username = username;
+          
+          // Se for o próprio operador atualmente logado, atualiza seus dados de sessão
+          const currentUser = window.storageService.getCurrentUser();
+          if (currentUser && currentUser.username.toLowerCase() === oldUsernameLower) {
+            currentUser.username = username;
+            currentUser.role = role;
+            window.storageService.setCurrentUser(currentUser);
+          }
+        }
+        
+        users[idx].role = role;
+        
+        // Se uma nova senha foi digitada, aplica o hash antes de salvar
+        if (password !== '') {
+          users[idx].password = window.storageService._hashPassword(password);
+        }
+        
+        window.storageService.saveUsers(users);
+        window.showToast(`Operador "${username}" atualizado com sucesso!`, 'success');
+        this.resetUserForm();
+        this.renderUsersList();
+      } else {
+        window.showToast('Erro ao atualizar operador. Usuário não encontrado.', 'error');
+      }
     } else {
-      window.showToast('Este nome de usuário já está sendo utilizado.', 'warning');
+      // MODO DE CADASTRO
+      if (!password) {
+        window.showToast('Por favor, preencha a senha do operador.', 'warning');
+        return;
+      }
+      
+      const success = window.storageService.addUser(username, password, role);
+      if (success) {
+        window.showToast(`Operador "${username}" cadastrado com sucesso!`, 'success');
+        this.resetUserForm();
+        this.renderUsersList();
+      } else {
+        window.showToast('Este nome de usuário já está sendo utilizado.', 'warning');
+      }
     }
   }
 
@@ -852,9 +1021,74 @@ class AdminController {
       const success = window.storageService.deleteUser(username);
       if (success) {
         window.showToast('Operador excluído com sucesso!', 'success');
+        if (this.selectedUsername === username) {
+          this.resetUserForm();
+        }
         this.renderUsersList();
       } else {
         window.showToast('Erro ao excluir o operador.', 'error');
+      }
+    }
+  }
+
+  // --- GERENCIAMENTO DE CONFIGURAÇÕES DO PORTAL ---
+  loadSettingsInPanel() {
+    const settings = window.storageService.getSettings();
+    
+    if (this.settingsThemeSelect) {
+      this.settingsThemeSelect.value = settings.theme || 'red';
+    }
+    if (this.settingsMenuBarCheckbox) {
+      this.settingsMenuBarCheckbox.checked = !!settings.showMenuBar;
+    }
+    if (this.settingsAutoScrollCheckbox) {
+      this.settingsAutoScrollCheckbox.checked = settings.autoScroll !== false;
+    }
+  }
+
+  saveSettingsTheme() {
+    const settings = window.storageService.getSettings();
+    settings.theme = this.settingsThemeSelect.value;
+    window.storageService.saveSettings(settings);
+    
+    // Aplica o tema visual no body instantaneamente
+    if (settings.theme && settings.theme !== 'red') {
+      document.body.className = `theme-${settings.theme}`;
+    } else {
+      document.body.className = '';
+    }
+    window.showToast('Tema visual do mainframe atualizado!', 'success');
+  }
+
+  saveSettingsMenuBar() {
+    const settings = window.storageService.getSettings();
+    settings.showMenuBar = this.settingsMenuBarCheckbox.checked;
+    window.storageService.saveSettings(settings);
+    
+    // Aplica a visibilidade do menu Electron instantaneamente
+    if (window.api && typeof window.api.setMenuBarVisibility === 'function') {
+      window.api.setMenuBarVisibility(settings.showMenuBar);
+    }
+    window.showToast('Configuração de menus da janela salva!', 'success');
+  }
+
+  saveSettingsAutoScroll() {
+    const settings = window.storageService.getSettings();
+    settings.autoScroll = this.settingsAutoScrollCheckbox.checked;
+    window.storageService.saveSettings(settings);
+    window.showToast('Preferência de auto-scroll salva!', 'success');
+  }
+
+  handleResetDatabase() {
+    if (confirm('ATENÇÃO: Deseja realmente restaurar o Banco de Dados? Isso apagará todas as resoluções de erros e manuais cadastrados por você, voltando ao estado original.')) {
+      if (confirm('CONFIRMAÇÃO EXTREMA: Clique em OK para prosseguir com a redefinição total dos artigos e logs da base de conhecimento.')) {
+        window.storageService.resetDatabase();
+        window.showToast('Banco de Dados restaurado com sucesso!', 'success');
+        
+        // Atualiza a visualização do painel admin
+        this.renderArticlesList();
+        this.resetFormForNew();
+        this.loadReports();
       }
     }
   }

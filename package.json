@@ -15,12 +15,11 @@
   },
   "build": {
     "appId": "com.inovar.assist",
-    "productName": "Inovar Assistente",
+    "productName": "Inovar Assist",
     "directories": {
       "output": "dist"
     },
     "win": {
-      "artifactName": "Inovar Assistente v1.0.${ext}",
       "target": [
         {
           "target": "nsis",
@@ -38,7 +37,11 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Inovar Assistente"
+      "shortcutName": "Inovar Assist 1.0",
+      "artifactName": "Inovar Assist Setup 1.0.${ext}"
+    },
+    "portable": {
+      "artifactName": "Inovar Assist 1.0.${ext}"
     }
   }
 }

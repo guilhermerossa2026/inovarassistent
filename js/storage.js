@@ -45,7 +45,8 @@ const STORAGE_KEYS = {
   SEARCH_LOGS: 'inovar_assist_logs',
   CURRENT_USER: 'inovar_assist_user',
   CATEGORIES: 'inovar_assist_categories',
-  USERS: 'inovar_assist_users'
+  USERS: 'inovar_assist_users',
+  SETTINGS: 'inovar_assist_settings'
 };
 
 class StorageService {
@@ -53,36 +54,159 @@ class StorageService {
     this._initDatabase();
   }
 
-  // Inicializa o banco local com dados semente caso esteja vazio
+  // --- MÉTODOS AUXILIARES DE SUPORTE AO ELECTRON / LOCALSTORAGE ---
+  _getItem(key) {
+    if (window.api && typeof window.api.readDatabaseFile === 'function') {
+      return window.api.readDatabaseFile(`${key}.json`);
+    }
+    return localStorage.getItem(key);
+  }
+
+  _setItem(key, value) {
+    if (window.api && typeof window.api.writeDatabaseFile === 'function') {
+      window.api.writeDatabaseFile(`${key}.json`, value);
+    } else {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  _removeItem(key) {
+    if (window.api && typeof window.api.writeDatabaseFile === 'function') {
+      window.api.writeDatabaseFile(`${key}.json`, "null");
+    } else {
+      localStorage.removeItem(key);
+    }
+  }
+
+  _hashPassword(password) {
+    if (window.api && typeof window.api.hashPassword === 'function') {
+      return window.api.hashPassword(password);
+    }
+    return password; // Fallback se não estiver rodando no Electron
+  }
+
+  // Inicializa o banco local com dados semente caso esteja vazio e migra dados antigos
   _initDatabase() {
-    if (!localStorage.getItem(STORAGE_KEYS.KNOWLEDGE_BASE)) {
+    const hasNodeApi = window.api && typeof window.api.readDatabaseFile === 'function';
+
+    // Migração automática de localStorage para arquivos JSON
+    Object.values(STORAGE_KEYS).forEach(key => {
+      let fileData = null;
+      if (hasNodeApi) {
+        fileData = window.api.readDatabaseFile(`${key}.json`);
+      }
+      
+      const localData = localStorage.getItem(key);
+      if (hasNodeApi && !fileData && localData) {
+        console.log(`Migrando chave ${key} do localStorage para arquivo JSON local...`);
+        window.api.writeDatabaseFile(`${key}.json`, localData);
+      }
+    });
+
+    if (!this._getItem(STORAGE_KEYS.KNOWLEDGE_BASE)) {
       const seedData = window.initialKnowledgeBase || [];
-      localStorage.setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(seedData));
+      this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(seedData));
     }
 
-    if (!localStorage.getItem(STORAGE_KEYS.SEARCH_LOGS)) {
+    if (!this._getItem(STORAGE_KEYS.SEARCH_LOGS)) {
       const seedLogs = window.initialLogs || [];
-      localStorage.setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(seedLogs));
+      this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(seedLogs));
     }
 
-    if (!localStorage.getItem(STORAGE_KEYS.CATEGORIES)) {
+    if (!this._getItem(STORAGE_KEYS.CATEGORIES)) {
       const defaultCategories = ['Fiscal', 'Banco de Dados', 'Periféricos', 'Instalação', 'Geral'];
-      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
+      this._setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
     }
 
-    if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+    if (!this._getItem(STORAGE_KEYS.USERS)) {
       const defaultUsers = [
-        { username: 'guilherme', password: '2420', role: 'ADM' },
-        { username: 'suporte', password: '123', role: 'NORMAL' }
+        { username: 'guilherme', password: this._hashPassword('2420'), role: 'ADM' },
+        { username: 'suporte', password: this._hashPassword('123'), role: 'NORMAL' }
       ];
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(defaultUsers));
+      this._setItem(STORAGE_KEYS.USERS, JSON.stringify(defaultUsers));
     }
+
+    // Inicialização das configurações padrões caso não existam
+    if (!this._getItem(STORAGE_KEYS.SETTINGS)) {
+      const defaultSettings = {
+        saveLogin: false,
+        theme: 'red',
+        showMenuBar: false,
+        autoScroll: true,
+        rememberedUser: '',
+        rememberedPassword: ''
+      };
+      this._setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
+    }
+
+    // Garante que senhas antigas em texto puro sejam convertidas para Hash SHA-256
+    const usersStr = this._getItem(STORAGE_KEYS.USERS);
+    if (usersStr) {
+      try {
+        const users = JSON.parse(usersStr);
+        let updated = false;
+        users.forEach(u => {
+          if (u.password && !/^[0-9a-f]{64}$/i.test(u.password)) {
+            u.password = this._hashPassword(u.password);
+            updated = true;
+          }
+        });
+        if (updated) {
+          this._setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
+      } catch (e) {
+        console.error("Erro ao rodar migração de hash de senhas de usuários:", e);
+      }
+    }
+  }
+
+  // --- GERENCIAMENTO DE CONFIGURAÇÕES ---
+  getSettings() {
+    try {
+      const settingsStr = this._getItem(STORAGE_KEYS.SETTINGS);
+      if (settingsStr) {
+        return JSON.parse(settingsStr);
+      }
+    } catch (e) {
+      console.error("Erro ao ler configurações do storage:", e);
+    }
+    return {
+      saveLogin: false,
+      theme: 'red',
+      showMenuBar: false,
+      autoScroll: true,
+      rememberedUser: '',
+      rememberedPassword: ''
+    };
+  }
+
+  saveSettings(settings) {
+    if (settings) {
+      this._setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      return true;
+    }
+    return false;
+  }
+
+  resetDatabase() {
+    // Restaura o banco de artigos e logs para os dados semente originais
+    const seedData = window.initialKnowledgeBase || [];
+    this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(seedData));
+
+    const seedLogs = window.initialLogs || [];
+    this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(seedLogs));
+
+    const defaultCategories = ['Fiscal', 'Banco de Dados', 'Periféricos', 'Instalação', 'Geral'];
+    this._setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
+    
+    // Mantém os usuários cadastrados inalterados para evitar lockout.
+    return true;
   }
 
   // --- GERENCIAMENTO DE USUÁRIO (TÉCNICO) ---
   getCurrentUser() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) || null;
+      return JSON.parse(this._getItem(STORAGE_KEYS.CURRENT_USER)) || null;
     } catch (e) {
       return null;
     }
@@ -90,27 +214,27 @@ class StorageService {
 
   setCurrentUser(userObj) {
     if (userObj) {
-      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(userObj));
+      this._setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(userObj));
       return true;
     }
     return false;
   }
 
   clearCurrentUser() {
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    this._removeItem(STORAGE_KEYS.CURRENT_USER);
   }
 
   // --- CONTAS DE USUÁRIOS E AUTENTICAÇÃO (CRUD) ---
   getUsers() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || [];
+      return JSON.parse(this._getItem(STORAGE_KEYS.USERS)) || [];
     } catch (e) {
       return [];
     }
   }
 
   saveUsers(users) {
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    this._setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   }
 
   addUser(username, password, role) {
@@ -119,7 +243,8 @@ class StorageService {
     if (!cleanUser || !password) return false;
     if (users.some(u => u.username.toLowerCase() === cleanUser)) return false;
     
-    users.push({ username: username.trim(), password: password, role: role });
+    const hashedPassword = this._hashPassword(password);
+    users.push({ username: username.trim(), password: hashedPassword, role: role });
     this.saveUsers(users);
     return true;
   }
@@ -143,7 +268,8 @@ class StorageService {
   validateLogin(username, password) {
     const users = this.getUsers();
     const cleanUser = username.trim().toLowerCase();
-    const user = users.find(u => u.username.toLowerCase() === cleanUser && u.password === password);
+    const hashedPassword = this._hashPassword(password);
+    const user = users.find(u => u.username.toLowerCase() === cleanUser && u.password === hashedPassword);
     if (user) {
       this.setCurrentUser(user);
       return user;
@@ -154,7 +280,7 @@ class StorageService {
   // --- GERENCIAMENTO DE CATEGORIAS DINÂMICAS ---
   getCategories() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.CATEGORIES)) || ['Fiscal', 'Banco de Dados', 'Periféricos', 'Instalação', 'Geral'];
+      return JSON.parse(this._getItem(STORAGE_KEYS.CATEGORIES)) || ['Fiscal', 'Banco de Dados', 'Periféricos', 'Instalação', 'Geral'];
     } catch (e) {
       return ['Fiscal', 'Banco de Dados', 'Periféricos', 'Instalação', 'Geral'];
     }
@@ -168,7 +294,7 @@ class StorageService {
     const exists = cats.some(c => c.toLowerCase() === clean.toLowerCase());
     if (exists) return false;
     cats.push(clean);
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cats));
+    this._setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cats));
     return true;
   }
 
@@ -177,16 +303,16 @@ class StorageService {
     const index = cats.indexOf(name);
     if (index === -1) return false;
     cats.splice(index, 1);
-    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cats));
+    this._setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(cats));
     return true;
   }
 
   // --- OPERAÇÕES DA BASE DE CONHECIMENTO (CRUD) ---
   getKnowledge() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.KNOWLEDGE_BASE)) || [];
+      return JSON.parse(this._getItem(STORAGE_KEYS.KNOWLEDGE_BASE)) || [];
     } catch (e) {
-      console.error("Erro ao ler base de conhecimento do localStorage", e);
+      console.error("Erro ao ler base de conhecimento", e);
       return [];
     }
   }
@@ -202,7 +328,7 @@ class StorageService {
       solution: item.solution || ''
     };
     kb.push(newItem);
-    localStorage.setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
+    this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
     return newItem;
   }
 
@@ -218,7 +344,7 @@ class StorageService {
         description: updatedItem.description || '',
         solution: updatedItem.solution || ''
       };
-      localStorage.setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
+      this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
       return true;
     }
     return false;
@@ -229,7 +355,7 @@ class StorageService {
     const initialLength = kb.length;
     kb = kb.filter(item => item.id !== id);
     if (kb.length !== initialLength) {
-      localStorage.setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
+      this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
       return true;
     }
     return false;
@@ -247,9 +373,9 @@ class StorageService {
   // --- OPERAÇÕES DOS LOGS DE HISTÓRICO ---
   getLogs() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.SEARCH_LOGS)) || [];
+      return JSON.parse(this._getItem(STORAGE_KEYS.SEARCH_LOGS)) || [];
     } catch (e) {
-      console.error("Erro ao ler logs do localStorage", e);
+      console.error("Erro ao ler logs", e);
       return [];
     }
   }
@@ -267,7 +393,7 @@ class StorageService {
       articleId: articleId
     };
     logs.push(newLog);
-    localStorage.setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(logs));
+    this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(logs));
     return newLog;
   }
 
@@ -275,18 +401,17 @@ class StorageService {
   updateLastLogResolution(resolved, articleId = null) {
     const logs = this.getLogs();
     if (logs.length > 0) {
-      // Procura a última busca sem artigo associado ou a última em geral
       const idx = logs.length - 1;
       logs[idx].resolved = resolved;
       if (articleId) logs[idx].articleId = articleId;
-      localStorage.setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(logs));
+      this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(logs));
       return true;
     }
     return false;
   }
 
   clearLogs() {
-    localStorage.setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify([]));
+    this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify([]));
   }
 
   // --- IMPORTAÇÃO / EXPORTAÇÃO (DISTRIBUIÇÃO OFFLINE) ---
@@ -303,12 +428,11 @@ class StorageService {
     try {
       const parsed = JSON.parse(jsonString);
       if (parsed && Array.isArray(parsed.knowledgeBase)) {
-        localStorage.setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(parsed.knowledgeBase));
+        this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(parsed.knowledgeBase));
         return true;
       }
-      // Suporte a importação direta de array de conhecimentos
       if (Array.isArray(parsed)) {
-        localStorage.setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(parsed));
+        this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(parsed));
         return true;
       }
       return false;

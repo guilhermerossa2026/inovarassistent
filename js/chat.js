@@ -10,6 +10,7 @@ class ChatController {
     
     this._initElements();
     this._bindEvents();
+    this.applySettingsAndTheme();
     this.checkUserSession();
   }
 
@@ -21,6 +22,7 @@ class ChatController {
     // Inputs de Login
     this.loginInput = document.getElementById('login-username');
     this.loginPasswordInput = document.getElementById('login-password');
+    this.loginSaveSession = document.getElementById('login-save-session');
     this.btnLoginSubmit = document.getElementById('btn-login-submit');
     
     // Elementos de Chat
@@ -62,12 +64,49 @@ class ChatController {
     });
     this.btnSend.disabled = true; // Estado inicial
 
-    // Acessar painel administrativo
+    // Acessar painel administrativo diretamente por ADM
     this.btnAdmin.addEventListener('click', () => {
       if (window.adminController) {
-        window.adminController.enterAdmin();
+        window.adminController.enterAdminDirectly();
       }
     });
+
+    // Intercepta cliques nas bolhas de chat para links externos
+    this.chatHistory.addEventListener('click', (e) => {
+      const link = e.target.closest('a.external-link');
+      if (link) {
+        e.preventDefault();
+        const url = link.getAttribute('href');
+        if (window.api && typeof window.api.openExternalLink === 'function') {
+          window.api.openExternalLink(url);
+        } else {
+          window.open(url, '_blank');
+        }
+      }
+    });
+  }
+
+  applySettingsAndTheme() {
+    const settings = window.storageService.getSettings();
+    
+    // 1. Aplica o tema visual no body
+    if (settings.theme && settings.theme !== 'red') {
+      document.body.className = `theme-${settings.theme}`;
+    } else {
+      document.body.className = '';
+    }
+    
+    // 2. Aplica barra de menus do Electron no startup
+    if (window.api && typeof window.api.setMenuBarVisibility === 'function') {
+      window.api.setMenuBarVisibility(!!settings.showMenuBar);
+    }
+    
+    // 3. Preenche login se "Lembrar de mim" estiver ativo
+    if (settings.saveLogin) {
+      if (this.loginInput) this.loginInput.value = settings.rememberedUser || '';
+      if (this.loginPasswordInput) this.loginPasswordInput.value = settings.rememberedPassword || '';
+      if (this.loginSaveSession) this.loginSaveSession.checked = true;
+    }
   }
 
   // --- FLUXO DE LOGIN / IDENTIFICAÇÃO ---
@@ -79,6 +118,14 @@ class ChatController {
       this.chatView.classList.remove('hidden');
       this.updateHeader();
       this.initGreeting();
+      
+      // Oculta/Exibe a engrenagem com base no cargo ADM vs SUPORTE (Normal)
+      if (this.activeUser.role === 'ADM') {
+        this.btnAdmin.classList.remove('hidden');
+      } else {
+        this.btnAdmin.classList.add('hidden');
+      }
+
       // Garante foco automático no input de chat após carregar sessão
       setTimeout(() => {
         if (this.chatInput) this.chatInput.focus();
@@ -89,7 +136,18 @@ class ChatController {
       this.chatView.classList.add('hidden');
       this.loginInput.value = '';
       if (this.loginPasswordInput) this.loginPasswordInput.value = '';
-      // Garante foco automático no input de login com pequeno timeout
+      
+      // Ao reabrir, se "Lembrar" estiver ativo, os valores serão preenchidos
+      const settings = window.storageService.getSettings();
+      if (settings.saveLogin) {
+        this.loginInput.value = settings.rememberedUser || '';
+        if (this.loginPasswordInput) this.loginPasswordInput.value = settings.rememberedPassword || '';
+        if (this.loginSaveSession) this.loginSaveSession.checked = true;
+      } else {
+        if (this.loginSaveSession) this.loginSaveSession.checked = false;
+      }
+
+      // Garante foco automático no input de login
       setTimeout(() => {
         if (this.loginInput) this.loginInput.focus();
       }, 80);
@@ -106,6 +164,19 @@ class ChatController {
     
     const user = window.storageService.validateLogin(username, password);
     if (user) {
+      // Grava preferências de Lembrar Login
+      const settings = window.storageService.getSettings();
+      if (this.loginSaveSession && this.loginSaveSession.checked) {
+        settings.saveLogin = true;
+        settings.rememberedUser = username;
+        settings.rememberedPassword = password;
+      } else {
+        settings.saveLogin = false;
+        settings.rememberedUser = '';
+        settings.rememberedPassword = '';
+      }
+      window.storageService.saveSettings(settings);
+
       this.checkUserSession();
       // Garante foco no chat após logar com sucesso
       setTimeout(() => {
@@ -113,6 +184,10 @@ class ChatController {
       }, 100);
     } else {
       window.showToast('Usuário ou senha incorretos!', 'error');
+      if (this.loginPasswordInput) {
+        this.loginPasswordInput.value = '';
+        this.loginPasswordInput.focus();
+      }
     }
   }
 
@@ -145,7 +220,7 @@ class ChatController {
       Como posso te ajudar a resolver o chamado do Sistema Inovar de hoje? *Digite o erro ou palavra-chave diretamente abaixo para eu buscar a solução.*
     `;
 
-    this.addBotResponseBubble(greetingHTML, null, false, false); // Passa false para NÃO renderizar chips rápidos
+    this.addBotResponseBubble(greetingHTML, null, false, true); // Passa true para renderizar chips rápidos de onboarding
   }
 
   // --- OPERAÇÕES E BUSCAS NO CHAT ---
@@ -331,7 +406,7 @@ class ChatController {
     `;
 
     this.chatHistory.appendChild(bubble);
-    this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+    this.scrollToBottom();
 
     // Vincula eventos de clique aos botões de escolha rápida
     options.forEach((opt, idx) => {
@@ -377,7 +452,7 @@ class ChatController {
         btnUnsolved.remove(); // Remove o botão de recusar
       }
 
-      this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+      this.scrollToBottom();
     }
   }
 
@@ -390,7 +465,7 @@ class ChatController {
       btnUnsolved.disabled = true;
       btnUnsolved.innerHTML = 'Solução não ajudou';
       
-      this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+      this.scrollToBottom();
     }
   }
 
@@ -400,7 +475,7 @@ class ChatController {
     bubble.className = 'message message-user';
     bubble.textContent = text;
     this.chatHistory.appendChild(bubble);
-    this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+    this.scrollToBottom();
   }
 
   addLoadingIndicatorBubble() {
@@ -408,7 +483,7 @@ class ChatController {
     bubble.className = 'message loading-indicator';
     bubble.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>';
     this.chatHistory.appendChild(bubble);
-    this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+    this.scrollToBottom();
     return bubble;
   }
 
@@ -431,7 +506,7 @@ class ChatController {
     if (showOnboardingChips) {
       chipsUid = 'chips-' + Date.now();
       onboardingChipsHTML = `
-        <div class="category-chips-grid">
+        <div class="category-chips-grid" style="animation: fadeIn 0.4s ease-out;">
           <button class="category-chip" id="${chipsUid}-fiscal">📄 Área Fiscal (NF-e)</button>
           <button class="category-chip" id="${chipsUid}-banco">🗄️ Banco de Dados</button>
           <button class="category-chip" id="${chipsUid}-perif">🖨️ Periféricos</button>
@@ -454,7 +529,7 @@ class ChatController {
         cannedUid = 'canned-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
         clientFriendlyText = article.clientFriendly;
         clientResponseHTML = `
-          <div class="client-response-box">
+          <div class="client-response-box" style="animation: fadeIn 0.4s ease-out;">
             <div class="client-response-header">
               <span>💬 Mensagem Pronta para o Cliente (WhatsApp/Ticket)</span>
               <button class="copy-canned-btn" id="${cannedUid}-btn" title="Copiar resposta amigável para o clipboard">
@@ -471,108 +546,197 @@ class ChatController {
     }
 
     const uid = 'act-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-    if (showActionButtons && articleId) {
-      bubble.innerHTML = `
-        <div class="bot-avatar">
-          <div class="bot-icon">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-          </div>
-          <span>INOVAR.AI</span>
-        </div>
-        <div class="bot-response-container">
-          <div class="bot-response-text">
-            ${parsedHTML}
-            ${clientResponseHTML}
-          </div>
-          <div class="bot-response-actions">
-            <button class="action-button success-action" id="${uid}-yes">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              Resolveu o Problema!
-            </button>
-            <button class="action-button" id="${uid}-no" style="color: var(--text-secondary); border-color: var(--border-color); background-color: transparent;">
-              Não ajudou
-            </button>
-          </div>
-        </div>
-      `;
 
-      this.chatHistory.appendChild(bubble);
+    // Renderiza a estrutura da bolha vazia
+    bubble.innerHTML = `
+      <div class="bot-avatar">
+        <div class="bot-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <span>INOVAR.AI</span>
+      </div>
+      <div class="bot-response-container">
+        <div class="bot-response-text"></div>
+      </div>
+    `;
+
+    this.chatHistory.appendChild(bubble);
+    const textContainer = bubble.querySelector('.bot-response-text');
+    const responseContainer = bubble.querySelector('.bot-response-container');
+
+    // Executa digitação dinâmica no container de texto
+    this._typeHTML(textContainer, parsedHTML, 3, () => {
+      // Ao terminar de digitar, carrega os elementos interativos
       
-      // Vincula os escutadores via Javascript direto
-      const btnYes = document.getElementById(`${uid}-yes`);
-      const btnNo = document.getElementById(`${uid}-no`);
-      
-      btnYes.addEventListener('click', () => this.markAsSolved(articleId, btnYes, btnNo));
-      btnNo.addEventListener('click', () => this.markAsUnsolved(btnYes, btnNo));
-
-    } else {
-      bubble.innerHTML = `
-        <div class="bot-avatar">
-          <div class="bot-icon">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-          </div>
-          <span>INOVAR.AI</span>
-        </div>
-        <div class="bot-response-container">
-          <div class="bot-response-text">
-            ${parsedHTML}
-            ${onboardingChipsHTML}
-            ${clientResponseHTML}
-          </div>
-        </div>
-      `;
-      this.chatHistory.appendChild(bubble);
-    }
-
-    // --- BIND EVENT LISTENER PARA BOTÃO DE COPIAR RESPOSTA DO CLIENTE ---
-    if (hasClientResponse && cannedUid) {
-      const copyBtn = document.getElementById(`${cannedUid}-btn`);
-      if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-          navigator.clipboard.writeText(clientFriendlyText).then(() => {
-            copyBtn.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              Copiado!
-            `;
-            setTimeout(() => {
+      // 1. Mensagem pronta do cliente
+      if (hasClientResponse && clientResponseHTML) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = clientResponseHTML;
+        textContainer.appendChild(tempDiv.firstElementChild);
+        
+        const copyBtn = document.getElementById(`${cannedUid}-btn`);
+        if (copyBtn) {
+          copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(clientFriendlyText).then(() => {
               copyBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                Copiar Mensagem
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Copiado!
               `;
-            }, 2000);
-          }).catch(err => {
-            console.error('Erro ao acessar Clipboard API', err);
-          });
-        });
-      }
-    }
-
-    // --- BIND EVENT LISTENERS PARA CHIPS DE CATEGORIAS INICIAIS ---
-    if (showOnboardingChips && chipsUid) {
-      ['fiscal', 'banco', 'perif', 'inst'].forEach(type => {
-        const chip = document.getElementById(`${chipsUid}-${type}`);
-        if (chip) {
-          chip.addEventListener('click', () => {
-            let label = '';
-            if (type === 'fiscal') label = 'Área Fiscal (NF-e)';
-            if (type === 'banco') label = 'Banco de Dados (SQL)';
-            if (type === 'perif') label = 'Periféricos';
-            if (type === 'inst') label = 'Instalação';
-            
-            if (this.chatInput) {
-              this.chatInput.value = label;
-              this.handleSendMessage();
-            }
+              setTimeout(() => {
+                copyBtn.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  Copiar Mensagem
+                `;
+              }, 2000);
+            }).catch(err => {
+              console.error('Erro ao acessar Clipboard API', err);
+            });
           });
         }
-      });
-    }
+      }
 
-    this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+      // 2. Botões de Feedback da solução
+      if (showActionButtons && articleId) {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'bot-response-actions';
+        actionsDiv.style.animation = 'fadeIn 0.4s ease-out';
+        actionsDiv.innerHTML = `
+          <button class="action-button success-action" id="${uid}-yes">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Resolveu o Problema!
+          </button>
+          <button class="action-button" id="${uid}-no" style="color: var(--text-secondary); border-color: var(--border-color); background-color: transparent;">
+            Não ajudou
+          </button>
+        `;
+        responseContainer.appendChild(actionsDiv);
+
+        const btnYes = document.getElementById(`${uid}-yes`);
+        const btnNo = document.getElementById(`${uid}-no`);
+        
+        btnYes.addEventListener('click', () => this.markAsSolved(articleId, btnYes, btnNo));
+        btnNo.addEventListener('click', () => this.markAsUnsolved(btnYes, btnNo));
+      }
+
+      // 3. Chips de Onboarding
+      if (showOnboardingChips && onboardingChipsHTML) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = onboardingChipsHTML;
+        textContainer.appendChild(tempDiv.firstElementChild);
+
+        ['fiscal', 'banco', 'perif', 'inst'].forEach(type => {
+          const chip = document.getElementById(`${chipsUid}-${type}`);
+          if (chip) {
+            chip.addEventListener('click', () => {
+              let label = '';
+              if (type === 'fiscal') label = 'Área Fiscal (NF-e)';
+              if (type === 'banco') label = 'Banco de Dados (SQL)';
+              if (type === 'perif') label = 'Periféricos';
+              if (type === 'inst') label = 'Instalação';
+              
+              if (this.chatInput) {
+                this.chatInput.value = label;
+                this.handleSendMessage();
+              }
+            });
+          }
+        });
+      }
+
+      this.scrollToBottom();
+    });
+
+    this.scrollToBottom();
+  }
+
+  // --- MÉTODOS DE DIGITAÇÃO DE TEXTO ---
+  _typeHTML(element, htmlContent, speed = 2, onComplete = null) {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Cria o caret piscante cyberpunk
+    const caret = document.createElement('span');
+    caret.className = 'typing-caret';
+    caret.textContent = '▋';
+    element.appendChild(caret);
+    
+    const nodes = [];
+    const collectNodes = (node, parent) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        nodes.push({ type: 'text', originalNode: node, parent: parent, text: node.nodeValue });
+      } else {
+        const clone = node.cloneNode(false);
+        nodes.push({ type: 'element', originalNode: node, clonedNode: clone, parent: parent });
+        for (let child of node.childNodes) {
+          collectNodes(child, node);
+        }
+      }
+    };
+    
+    for (let child of tempDiv.childNodes) {
+      collectNodes(child, tempDiv);
+    }
+    
+    const nodeMap = new Map();
+    nodeMap.set(tempDiv, element);
+    
+    let nodeIndex = 0;
+    let charIndex = 0;
+    
+    const typeNext = () => {
+      this.scrollToBottom();
+      
+      if (nodeIndex >= nodes.length) {
+        caret.remove();
+        if (onComplete) onComplete();
+        return;
+      }
+      
+      const item = nodes[nodeIndex];
+      const parentDest = nodeMap.get(item.parent);
+      
+      if (!parentDest) {
+        // Prevenção contra erros caso o mapeamento falhe
+        nodeIndex++;
+        setTimeout(typeNext, speed);
+        return;
+      }
+      
+      if (item.type === 'element') {
+        parentDest.insertBefore(item.clonedNode, caret);
+        nodeMap.set(item.originalNode, item.clonedNode);
+        nodeIndex++;
+        setTimeout(typeNext, speed);
+      } else if (item.type === 'text') {
+        let destTextNode = nodeMap.get(item.originalNode);
+        if (!destTextNode) {
+          destTextNode = document.createTextNode('');
+          parentDest.insertBefore(destTextNode, caret);
+          nodeMap.set(item.originalNode, destTextNode);
+        }
+        
+        if (charIndex < item.text.length) {
+          destTextNode.nodeValue += item.text[charIndex];
+          charIndex++;
+          setTimeout(typeNext, speed);
+        } else {
+          charIndex = 0;
+          nodeIndex++;
+          setTimeout(typeNext, speed);
+        }
+      }
+    };
+    
+    typeNext();
+  }
+
+  scrollToBottom() {
+    const settings = window.storageService.getSettings();
+    if (settings.autoScroll !== false) {
+      this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+    }
   }
 
   // --- PARSER DE MARKDOWN SIMPLE ---
@@ -586,6 +750,9 @@ class ChatController {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+
+    // Suporte a Links Markdown [Texto](URL) expostos na ponte do Electron
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="external-link" target="_blank">$1</a>');
       
     // Volta a renderizar quebras de parágrafo estruturadas
     html = html.split('\n\n').map(p => `<p>${p.trim()}</p>`).join('');

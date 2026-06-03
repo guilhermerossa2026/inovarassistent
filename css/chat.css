@@ -466,3 +466,18 @@
   opacity: 1;
   transform: translateX(3px);
 }
+
+/* Efeito de Cursor Piscante para Digitação do Bot */
+.typing-caret {
+  display: inline-block;
+  margin-left: 2px;
+  color: var(--inovar-red);
+  font-weight: bold;
+  animation: blink 0.8s infinite;
+  vertical-align: middle;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
