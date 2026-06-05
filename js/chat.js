@@ -1,5 +1,75 @@
 // Lógica de Operação do Assistente (Chat) - Inovar Assist
 
+// Lista de palavras comuns para descartar na busca técnico-textual
+const STOPWORDS = new Set(['de', 'a', 'o', 'que', 'e', 'do', 'da', 'em', 'um', 'para', 'com', 'na', 'no', 'os', 'as']);
+
+function pesquisarNaBase(query) {
+  if (!query || query.trim() === "") return [];
+
+  // normalização da query
+  const cleanQuery = query.toLowerCase().trim();
+  const queryNormalizada = cleanQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // 1. Tokenização: Limpa o texto e divide em palavras chaves
+  const termos = queryNormalizada
+    .replace(/[^a-z0-9\s-]/g, "") // Remove pontuações
+    .split(/\s+/)
+    .filter(termo => termo.length > 1 && !STOPWORDS.has(termo));
+
+  // Caso os termos fiquem vazios (ex: o usuário digitou apenas conectivos), tenta usar todos os termos > 1 caractere
+  let termosParaPesquisa = termos;
+  if (termosParaPesquisa.length === 0) {
+    termosParaPesquisa = queryNormalizada
+      .replace(/[^a-z0-9\s-]/g, "")
+      .split(/\s+/)
+      .filter(termo => termo.length > 1);
+  }
+
+  if (termosParaPesquisa.length === 0) return [];
+
+  const baseConhecimento = window.storageService.getKnowledge();
+  const resultadosComScore = [];
+
+  // 2. Cálculo do Score para cada artigo
+  baseConhecimento.forEach(artigo => {
+    let score = 0;
+    
+    // Regra especial: Correspondência exata do ID do artigo (fluxos interativos da árvore de decisão)
+    if (cleanQuery.includes(artigo.id.toLowerCase())) {
+      score += 100;
+    }
+
+    const tituloLimpo = artigo.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const descricaoLimpa = (artigo.description || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    termosParaPesquisa.forEach(termo => {
+      // Regra 1: Se bater exato com uma TAG cadastrada (Peso Máximo)
+      if (artigo.tags && artigo.tags.some(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === termo)) {
+        score += 10;
+      }
+      
+      // Regra 2: Se o termo estiver contido no TÍTULO
+      if (tituloLimpo.includes(termo)) {
+        score += 5;
+      }
+
+      // Regra 3: Se o termo estiver contido na DESCRIÇÃO
+      if (descricaoLimpa.includes(termo)) {
+        score += 2;
+      }
+    });
+
+    if (score > 0) {
+      resultadosComScore.push({ artigo, score });
+    }
+  });
+
+  // 3. Ordena do maior score para o menor
+  resultadosComScore.sort((a, b) => b.score - a.score);
+
+  return resultadosComScore;
+}
+
 class ChatController {
   constructor() {
     // Força limpeza de sessão no início para que sempre peça login ao entrar
@@ -254,11 +324,11 @@ class ChatController {
   }
 
   searchSolutions(query) {
-    const kb = window.storageService.getKnowledge();
     const cleanQuery = query.toLowerCase().trim();
+    const normalizedQuery = cleanQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     // --- FLUXO DE ÁRVORE DE DECISÃO INTERATIVA (LOCAL E GRATUITO) ---
-    if (cleanQuery === 'balança' || cleanQuery === 'balanca') {
+    if (normalizedQuery === 'balanca') {
       this.renderDecisionTree('Balanças', [
         { text: '⚖️ Balança Filizola - Configuração Serial COM (Peso Zerado)', target: 'kb-003' },
         { text: '🔌 Testar Porta Serial e Cabo com PuTTY/Testador', target: 'kb-003' }
@@ -266,7 +336,7 @@ class ChatController {
       return;
     }
     
-    if (cleanQuery === 'impressora' || cleanQuery === 'impressoras' || cleanQuery === 'impressao') {
+    if (normalizedQuery === 'impressora' || normalizedQuery === 'impressoras' || normalizedQuery === 'impressao') {
       this.renderDecisionTree('Impressoras Térmicas', [
         { text: '🖨️ Fila de Spooler Travada (Cupom não Imprime)', target: 'kb-004' },
         { text: '🔌 Validar Porta USB/Virtual (USB001, ESDPRT)', target: 'kb-004' }
@@ -274,7 +344,7 @@ class ChatController {
       return;
     }
 
-    if (cleanQuery === 'banco' || cleanQuery === 'sql' || cleanQuery === 'deadlock' || cleanQuery === 'banco de dados' || cleanQuery === 'banco de dados (sql)') {
+    if (normalizedQuery === 'banco' || normalizedQuery === 'sql' || normalizedQuery === 'deadlock' || normalizedQuery === 'banco de dados' || normalizedQuery === 'banco de dados sql') {
       this.renderDecisionTree('Banco de Dados SQL Server', [
         { text: '🗄️ Liberar Deadlock / Travamento de PDV (Kill SPID causador)', target: 'kb-002' },
         { text: '🔍 Query SQL para identificar processos bloqueados', target: 'kb-002' }
@@ -282,7 +352,7 @@ class ChatController {
       return;
     }
 
-    if (cleanQuery === 'fiscal' || cleanQuery === 'nfe' || cleanQuery === 'sefaz' || cleanQuery === 'timeout' || cleanQuery === 'área fiscal (nf-e)') {
+    if (normalizedQuery === 'fiscal' || normalizedQuery === 'nfe' || normalizedQuery === 'sefaz' || normalizedQuery === 'timeout' || normalizedQuery === 'area fiscal' || normalizedQuery === 'area fiscal nf-e') {
       this.renderDecisionTree('Área Fiscal (Emissão de NF-e)', [
         { text: '📄 Instabilidade SEFAZ / Timeout na Emissão de NF-e', target: 'kb-001' },
         { text: '🔄 Reiniciar o Serviço Integrador Fiscal local via CMD', target: 'kb-001' },
@@ -290,90 +360,31 @@ class ChatController {
       ]);
       return;
     }
-    
-    // Algoritmo de Busca por Tokenização (Palavras-Chave) com Score de Relevância
-    const stopwords = ['de', 'do', 'da', 'o', 'a', 'os', 'as', 'em', 'no', 'na', 'nos', 'nas', 'com', 'sem', 'por', 'para', 'um', 'uma', 'uns', 'umas', 'que', 'se', 'como', 'ao', 'aos', 'ou', 'e', 'do', 'dos', 'das', 'seu', 'sua', 'seus', 'suas', 'ele', 'ela', 'eles', 'elas', 'erro', 'problema', 'falha', 'sistema', 'inovar'];
-    
-    // Divide e limpa os tokens da consulta
-    let tokens = cleanQuery
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ')
-      .split(/\s+/)
-      .map(t => t.trim())
-      .filter(t => t.length > 1 && !stopwords.includes(t));
 
-    // Se a consulta contiver apenas conectivos/palavras curtas, tenta usar todos os termos > 1 caractere
-    if (tokens.length === 0) {
-      tokens = cleanQuery
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ')
-        .split(/\s+/)
-        .map(t => t.trim())
-        .filter(t => t.length > 1);
-    }
-
-    // Calcula a pontuação para cada artigo da base de conhecimento
-    const scoredArticles = kb.map(article => {
-      let score = 0;
-      const titleLower = article.title.toLowerCase();
-      const descLower = article.description.toLowerCase();
-      const solutionLower = article.solution.toLowerCase();
-      const tagsLower = article.tags.map(t => t.toLowerCase());
-
-      // 1. Correspondência exata do ID do artigo (caso o fluxo venha de árvore de decisão)
-      if (cleanQuery.includes(article.id.toLowerCase())) {
-        score += 150;
-      }
-
-      tokens.forEach(token => {
-        // A. Pontuação por Tags
-        tagsLower.forEach(tag => {
-          if (tag === token) {
-            score += 45; // Correspondência exata com tag
-          } else if (tag.includes(token) || token.includes(tag)) {
-            score += 20; // Correspondência parcial com tag
-          }
-        });
-
-        // B. Pontuação pelo Título
-        const titleWords = titleLower.split(/\s+/);
-        if (titleWords.includes(token)) {
-          score += 35; // Palavra exata no título
-        } else if (titleLower.includes(token)) {
-          score += 15; // Palavra contida no título
-        }
-
-        // C. Pontuação pela Descrição
-        if (descLower.includes(token)) {
-          score += 10;
-        }
-
-        // D. Pontuação pela Solução
-        if (solutionLower.includes(token)) {
-          score += 3;
-        }
-      });
-
-      return { article, score };
-    });
-
-    // Filtra artigos que alcançaram a pontuação mínima (15) e ordena por relevância
-    const matched = scoredArticles
-      .filter(item => item.score >= 15)
-      .sort((a, b) => b.score - a.score);
+    // Algoritmo de Busca por Score
+    const matched = pesquisarNaBase(query);
 
     if (matched.length > 0) {
-      const bestMatch = matched[0].article;
+      const bestMatch = matched[0].artigo;
       const bestScore = matched[0].score;
       this.lastMatchedArticleId = bestMatch.id;
       
       // Atualiza o log com o ID do artigo encontrado
       window.storageService.updateLastLogResolution(false, bestMatch.id);
 
+      // Calcula a porcentagem de relevância com base no score
+      let relevancaPercent = 100;
+      if (bestScore < 100) {
+        // Usamos 15 como base (100% de relevância) para score máximo prático de buscas simples
+        relevancaPercent = Math.min(100, Math.round((bestScore / 15) * 100));
+      }
+
       // Renderiza a solução detalhada encontrada
       const botResponseText = `
         Encontrei a resolução correspondente na nossa Base de Conhecimento!
         
         ## **${bestMatch.title}**
-        *Categoria: **${bestMatch.category}** (Relevância: ${Math.min(100, Math.round((bestScore / 130) * 100))}% - Score: ${bestScore})*
+        *Categoria: **${bestMatch.category}** (Relevância: ${relevancaPercent}% - Score: ${bestScore})*
         
         > ${bestMatch.description}
         
@@ -381,7 +392,7 @@ class ChatController {
       `;
 
       // Extrai até 2 artigos adicionais relevantes como relacionados
-      const related = matched.slice(1, 3).map(item => item.article);
+      const related = matched.slice(1, 3).map(item => item.artigo);
 
       this.addBotResponseBubble(botResponseText, bestMatch.id, true, false, related);
     } else {
