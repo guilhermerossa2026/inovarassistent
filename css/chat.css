@@ -127,11 +127,47 @@
 
 .bot-response-text pre {
   background-color: #0b0b0e;
-  padding: 0.7rem 0.9rem; /* Reduzido de 0.9rem 1.1rem */
+  padding: 0.7rem 3rem 0.7rem 0.9rem; /* Reduzido padding vertical, adicionado espaço à direita para o botão */
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   overflow-x: auto;
   margin: 0.6rem 0; /* Reduzido de 0.85rem */
+  position: relative; /* Essencial para o posicionamento absoluto do botão de cópia */
+}
+
+/* Botão de cópia rápida para blocos de comando */
+.copy-code-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 10;
+}
+
+.copy-code-btn:hover {
+  background-color: var(--inovar-red);
+  color: #ffffff;
+  border-color: var(--inovar-red);
+  box-shadow: 0 0 6px var(--inovar-red-glow-strong);
+}
+
+.copy-code-btn.copied {
+  background-color: var(--color-success) !important;
+  color: #ffffff !important;
+  border-color: var(--color-success) !important;
+  box-shadow: 0 0 6px rgba(0, 204, 102, 0.25) !important;
 }
 
 .bot-response-text pre code {

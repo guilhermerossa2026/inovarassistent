@@ -84,6 +84,7 @@ class AdminController {
     this.metricTopTag = document.getElementById('metric-top-tag');
     this.metricActiveUser = document.getElementById('metric-active-user');
     this.logsTableBody = document.getElementById('logs-table-body');
+    this.unresolvedLogsTableBody = document.getElementById('unresolved-logs-table-body');
     this.btnClearLogs = document.getElementById('btn-clear-logs');
   }
 
@@ -660,30 +661,99 @@ class AdminController {
     // 5. Renderizar Tabela de logs
     this.logsTableBody.innerHTML = '';
     
-    if (logs.length === 0) {
+    if (logs.length > 0) {
+      // Ordena do mais recente para o mais antigo
+      const sortedLogs = [...logs].reverse();
+      
+      sortedLogs.forEach(log => {
+        const tr = document.createElement('tr');
+        const timeStr = this._formatDate(log.timestamp);
+        
+        const badgeClass = log.resolved ? 'badge-success' : 'badge-danger';
+        const badgeText = log.resolved ? 'Resolvido' : 'Pendente';
+        
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${this._escapeHTML(log.user)}</td>
+          <td class="log-query">"${this._escapeHTML(log.query)}"</td>
+          <td class="log-time">${timeStr}</td>
+          <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+          <td style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">${log.articleId || 'N/A'}</td>
+        `;
+        this.logsTableBody.appendChild(tr);
+      });
+    } else {
       this.logsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Nenhuma interação registrada ainda.</td></tr>';
-      return;
     }
 
-    // Ordena do mais recente para o mais antigo
-    const sortedLogs = [...logs].reverse();
-    
-    sortedLogs.forEach(log => {
-      const tr = document.createElement('tr');
-      const timeStr = this._formatDate(log.timestamp);
-      
-      const badgeClass = log.resolved ? 'badge-success' : 'badge-danger';
-      const badgeText = log.resolved ? 'Resolvido' : 'Pendente';
-      
-      tr.innerHTML = `
-        <td style="font-weight: 600;">${this._escapeHTML(log.user)}</td>
-        <td class="log-query">"${this._escapeHTML(log.query)}"</td>
-        <td class="log-time">${timeStr}</td>
-        <td><span class="badge ${badgeClass}">${badgeText}</span></td>
-        <td style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">${log.articleId || 'N/A'}</td>
-      `;
-      this.logsTableBody.appendChild(tr);
+    // 6. Filtrar e Renderizar "Consultas Sem Resolução" (Zero resultados)
+    const unresolvedLogs = logs.filter(l => !l.articleId);
+    const unresolvedGroups = {};
+
+    unresolvedLogs.forEach(l => {
+      const cleanQuery = l.query.trim().toLowerCase();
+      if (!cleanQuery) return;
+      if (!unresolvedGroups[cleanQuery]) {
+        unresolvedGroups[cleanQuery] = {
+          query: l.query.trim(),
+          count: 0,
+          lastSeen: l.timestamp
+        };
+      }
+      unresolvedGroups[cleanQuery].count++;
+      if (new Date(l.timestamp) > new Date(unresolvedGroups[cleanQuery].lastSeen)) {
+        unresolvedGroups[cleanQuery].lastSeen = l.timestamp;
+      }
     });
+
+    const sortedUnresolved = Object.values(unresolvedGroups).sort((a, b) => b.count - a.count);
+    
+    if (this.unresolvedLogsTableBody) {
+      this.unresolvedLogsTableBody.innerHTML = '';
+      
+      if (sortedUnresolved.length > 0) {
+        sortedUnresolved.forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          const timeStr = this._formatDate(item.lastSeen);
+          
+          tr.innerHTML = `
+            <td style="font-weight: 600; color: var(--color-danger);">${this._escapeHTML(item.query)}</td>
+            <td style="text-align: center; font-weight: 700;">${item.count}x</td>
+            <td style="text-align: center;" class="log-time">${timeStr}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-primary doc-action-btn" id="btn-doc-${idx}" style="font-size: 0.7rem; padding: 0.3rem 0.65rem; width: auto; display: inline-flex; height: auto; align-items: center; gap: 0.2rem; justify-content: center;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                Documentar
+              </button>
+            </td>
+          `;
+          this.unresolvedLogsTableBody.appendChild(tr);
+
+          const btnDoc = tr.querySelector(`#btn-doc-${idx}`);
+          if (btnDoc) {
+            btnDoc.addEventListener('click', () => {
+              this.switchTab('articles');
+              this.resetFormForNew();
+              
+              // Preenche título com o termo buscado de forma limpa
+              const capitalised = item.query.charAt(0).toUpperCase() + item.query.slice(1);
+              this.formTitle.value = `Erro: ${capitalised}`;
+              
+              // Tenta extrair tags simples
+              const potentialTags = item.query.toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '')
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !['erro', 'como', 'para', 'nao', 'falha'].includes(w));
+              
+              this.formTags.value = potentialTags.join(', ');
+              this.formTitle.focus();
+              window.showToast(`Formulário preenchido para documentar erro "${item.query}"!`, 'info');
+            });
+          }
+        });
+      } else {
+        this.unresolvedLogsTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">Nenhuma busca com 0 resultados registrada.</td></tr>';
+      }
+    }
   }
 
   clearLogs() {

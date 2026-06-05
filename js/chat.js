@@ -291,67 +291,99 @@ class ChatController {
       return;
     }
     
-    // Algoritmo de Pontuação Inteligente (Scoring) para busca textual clássica
-    let bestMatch = null;
-    let highestScore = 0;
+    // Algoritmo de Busca por Tokenização (Palavras-Chave) com Score de Relevância
+    const stopwords = ['de', 'do', 'da', 'o', 'a', 'os', 'as', 'em', 'no', 'na', 'nos', 'nas', 'com', 'sem', 'por', 'para', 'um', 'uma', 'uns', 'umas', 'que', 'se', 'como', 'ao', 'aos', 'ou', 'e', 'do', 'dos', 'das', 'seu', 'sua', 'seus', 'suas', 'ele', 'ela', 'eles', 'elas', 'erro', 'problema', 'falha', 'sistema', 'inovar'];
+    
+    // Divide e limpa os tokens da consulta
+    let tokens = cleanQuery
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ')
+      .split(/\s+/)
+      .map(t => t.trim())
+      .filter(t => t.length > 1 && !stopwords.includes(t));
 
-    kb.forEach(article => {
+    // Se a consulta contiver apenas conectivos/palavras curtas, tenta usar todos os termos > 1 caractere
+    if (tokens.length === 0) {
+      tokens = cleanQuery
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, ' ')
+        .split(/\s+/)
+        .map(t => t.trim())
+        .filter(t => t.length > 1);
+    }
+
+    // Calcula a pontuação para cada artigo da base de conhecimento
+    const scoredArticles = kb.map(article => {
       let score = 0;
+      const titleLower = article.title.toLowerCase();
+      const descLower = article.description.toLowerCase();
+      const solutionLower = article.solution.toLowerCase();
+      const tagsLower = article.tags.map(t => t.toLowerCase());
 
-      // Correspondência exata de ID (útil se buscar por link/código de árvore de decisão)
-      if (cleanQuery.includes(article.id.toLowerCase())) score += 100;
+      // 1. Correspondência exata do ID do artigo (caso o fluxo venha de árvore de decisão)
+      if (cleanQuery.includes(article.id.toLowerCase())) {
+        score += 150;
+      }
 
-      // Correspondência por Tags (Muito prioritário)
-      article.tags.forEach(tag => {
-        if (cleanQuery.includes(tag)) {
-          score += 25; // 25 pontos por tag correspondente
+      tokens.forEach(token => {
+        // A. Pontuação por Tags
+        tagsLower.forEach(tag => {
+          if (tag === token) {
+            score += 45; // Correspondência exata com tag
+          } else if (tag.includes(token) || token.includes(tag)) {
+            score += 20; // Correspondência parcial com tag
+          }
+        });
+
+        // B. Pontuação pelo Título
+        const titleWords = titleLower.split(/\s+/);
+        if (titleWords.includes(token)) {
+          score += 35; // Palavra exata no título
+        } else if (titleLower.includes(token)) {
+          score += 15; // Palavra contida no título
+        }
+
+        // C. Pontuação pela Descrição
+        if (descLower.includes(token)) {
+          score += 10;
+        }
+
+        // D. Pontuação pela Solução
+        if (solutionLower.includes(token)) {
+          score += 3;
         }
       });
 
-      // Correspondência no Título
-      const titleWords = article.title.toLowerCase().split(/\s+/);
-      titleWords.forEach(word => {
-        if (word.length > 3 && cleanQuery.includes(word)) {
-          score += 15; // 15 pontos por palavra do título encontrada
-        }
-      });
-
-      // Correspondência na Descrição
-      if (article.description.toLowerCase().includes(cleanQuery)) {
-        score += 10;
-      }
-
-      // Correspondência no texto de Solução
-      if (article.solution.toLowerCase().includes(cleanQuery)) {
-        score += 5;
-      }
-
-      // Atualiza o melhor match
-      if (score > highestScore && score >= 15) { // Score mínimo de 15 pontos para ser considerado relevante
-        highestScore = score;
-        bestMatch = article;
-      }
+      return { article, score };
     });
 
-    if (bestMatch) {
+    // Filtra artigos que alcançaram a pontuação mínima (15) e ordena por relevância
+    const matched = scoredArticles
+      .filter(item => item.score >= 15)
+      .sort((a, b) => b.score - a.score);
+
+    if (matched.length > 0) {
+      const bestMatch = matched[0].article;
+      const bestScore = matched[0].score;
       this.lastMatchedArticleId = bestMatch.id;
       
       // Atualiza o log com o ID do artigo encontrado
       window.storageService.updateLastLogResolution(false, bestMatch.id);
 
-      // Renderiza a solução encontrada
+      // Renderiza a solução detalhada encontrada
       const botResponseText = `
         Encontrei a resolução correspondente na nossa Base de Conhecimento!
         
         ## **${bestMatch.title}**
-        *Categoria: **${bestMatch.category}** (Relevância: ${highestScore > 100 ? 100 : highestScore}%)*
+        *Categoria: **${bestMatch.category}** (Relevância: ${Math.min(100, Math.round((bestScore / 130) * 100))}% - Score: ${bestScore})*
         
         > ${bestMatch.description}
         
         ${bestMatch.solution}
       `;
 
-      this.addBotResponseBubble(botResponseText, bestMatch.id, true);
+      // Extrai até 2 artigos adicionais relevantes como relacionados
+      const related = matched.slice(1, 3).map(item => item.article);
+
+      this.addBotResponseBubble(botResponseText, bestMatch.id, true, false, related);
     } else {
       this.lastMatchedArticleId = null;
       
@@ -508,7 +540,7 @@ class ChatController {
     }
   }
 
-  addBotResponseBubble(markdownText, articleId = null, showActionButtons = false, showOnboardingChips = false) {
+  addBotResponseBubble(markdownText, articleId = null, showActionButtons = false, showOnboardingChips = false, relatedArticles = []) {
     this.isTypingResponse = true;
     if (this.chatInput) this.chatInput.disabled = true;
     if (this.btnSend) this.btnSend.disabled = true;
@@ -663,6 +695,75 @@ class ChatController {
           }
         });
       }
+
+      // 4. Sugestões de Artigos Relacionados
+      if (relatedArticles && relatedArticles.length > 0) {
+        const relatedUid = 'related-' + Date.now();
+        const relatedDiv = document.createElement('div');
+        relatedDiv.className = 'category-chips-grid';
+        relatedDiv.style.animation = 'fadeIn 0.4s ease-out';
+        relatedDiv.style.marginTop = '0.75rem';
+        
+        let relatedHTML = '<div style="font-size: 0.75rem; color: var(--text-secondary); width: 100%; margin-bottom: 0.25rem; font-weight: 600;">Artigos relacionados encontrados:</div>';
+        relatedArticles.forEach((art, idx) => {
+          relatedHTML += `<button class="category-chip" id="${relatedUid}-${idx}" style="border-color: rgba(230, 0, 0, 0.2); background-color: rgba(230, 0, 0, 0.02); max-width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">🔍 ${art.title}</button>`;
+        });
+        relatedDiv.innerHTML = relatedHTML;
+        textContainer.appendChild(relatedDiv);
+
+        relatedArticles.forEach((art, idx) => {
+          const chip = document.getElementById(`${relatedUid}-${idx}`);
+          if (chip) {
+            chip.addEventListener('click', () => {
+              if (this.isTypingResponse) return;
+              
+              if (this.chatInput) {
+                this.chatInput.value = art.title;
+                this.handleSendMessage();
+              }
+            });
+          }
+        });
+      }
+
+      // 5. Botão de Cópia Rápida para blocos de código/comandos (<pre>)
+      const preBlocks = textContainer.querySelectorAll('pre');
+      preBlocks.forEach((pre) => {
+        const codeElement = pre.querySelector('code');
+        if (!codeElement) return;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-code-btn';
+        copyBtn.title = 'Copiar comando/código';
+        copyBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copiar</span>
+        `;
+
+        pre.appendChild(copyBtn);
+
+        copyBtn.addEventListener('click', () => {
+          // Obtém o texto limpo, sem o botão de copiar
+          const textToCopy = codeElement.innerText || codeElement.textContent;
+          navigator.clipboard.writeText(textToCopy).then(() => {
+            copyBtn.classList.add('copied');
+            copyBtn.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Copiado!</span>
+            `;
+
+            setTimeout(() => {
+              copyBtn.classList.remove('copied');
+              copyBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copiar</span>
+              `;
+            }, 1500);
+          }).catch(err => {
+            console.error('Erro ao acessar Clipboard API', err);
+          });
+        });
+      });
 
       this.isTypingResponse = false;
       if (this.chatInput) {
