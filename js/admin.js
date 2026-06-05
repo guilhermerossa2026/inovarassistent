@@ -811,89 +811,63 @@ class AdminController {
   }
 
   processDiscordText() {
-    const text = this.discordPasteArea.value.trim();
-    if (!text) {
-      window.showToast('Por favor, cole um texto do Discord.', 'warning');
+    const txtBruto = this.discordPasteArea.value;
+    if (!txtBruto.trim()) {
+      window.showToast("Cole algum texto antes de processar.", "warning");
       return;
     }
 
-    // Algoritmo de parser sutil para Discord
-    let title = '';
-    let category = 'Geral';
-    let solution = text;
-    let description = '';
+    let titulo = "";
+    let solucao = txtBruto;
+    let tagsDetectadas = [];
 
-    // Tenta extrair título pelas primeiras linhas ou formatações do Discord
-    const lines = text.split('\n');
+    // 1. Tenta pegar a primeira linha em negrito como o Título (ex: **Erro de Timeout**)
+    const boldMatch = txtBruto.match(/\*\*(.*?)\*\*/);
+    if (boldMatch && boldMatch[1]) {
+      titulo = boldMatch[1].trim();
+    } else {
+      // Fallback: pega a primeira linha do texto como título
+      const linhas = txtBruto.split('\n');
+      titulo = linhas[0].replace(/[#*_-]/g, "").trim();
+    }
+
+    // 2. Tenta extrair palavras técnicas comuns no seu dia a dia para sugerir como Tags
+    const dicionarioTags = ['sefaz', 'filizola', 'timeout', 'deadlock', 'banco', 'sql', 'porta', 'serial', 'com1', 'nfe', 'pdv', 'impressora'];
+    const textoMinusculo = txtBruto.toLowerCase();
     
-    // Procura primeira linha com formatação bold do Discord (ex: **Erro de X**)
-    let foundTitle = false;
-    for (let i = 0; i < Math.min(lines.length, 5); i++) {
-      const line = lines[i].trim();
-      const boldMatch = line.match(/\*\*(.*?)\*\*/);
-      if (boldMatch && boldMatch[1] && boldMatch[1].trim().length > 3) {
-        title = boldMatch[1].trim();
-        foundTitle = true;
-        break;
-      }
-    }
-
-    // Se não encontrou, pega a primeira linha limpa como título
-    if (!foundTitle && lines.length > 0) {
-      title = lines[0].replace(/[#*`]/g, '').trim();
-    }
-
-    // Limita tamanho do título
-    if (title.length > 80) {
-      title = title.substring(0, 77) + '...';
-    }
-
-    // Extrai categorias baseando-se em palavras chaves do texto
-    const lowerText = text.toLowerCase();
-    if (lowerText.includes('nfe') || lowerText.includes('sefaz') || lowerText.includes('imposto') || lowerText.includes('nota')) {
-      category = 'Fiscal';
-    } else if (lowerText.includes('banco') || lowerText.includes('sql') || lowerText.includes('query') || lowerText.includes('lock')) {
-      category = 'Banco de Dados';
-    } else if (lowerText.includes('impressora') || lowerText.includes('bematech') || lowerText.includes('balanca') || lowerText.includes('serial') || lowerText.includes('periferico')) {
-      category = 'Periféricos';
-    } else if (lowerText.includes('instala') || lowerText.includes('config') || lowerText.includes('setup')) {
-      category = 'Instalação';
-    }
-
-    // Procura por códigos de erros ou palavras para virar Tags
-    const potentialTags = [];
-    const keywords = ['timeout', 'deadlock', 'bematech', 'filizola', 'elgin', 'sefaz', 'contingencia', 'cmd', 'portas', 'spooler'];
-    keywords.forEach(kw => {
-      if (lowerText.includes(kw)) potentialTags.push(kw);
-    });
-    
-    // Se o título tiver palavras úteis, adiciona
-    const titleWords = title.toLowerCase().split(/\s+/);
-    titleWords.forEach(w => {
-      const clean = w.replace(/[^a-z0-9]/g, '');
-      if (clean.length > 3 && !['erro', 'para', 'como', 'sistema', 'inovar'].includes(clean) && potentialTags.length < 5) {
-        if (!potentialTags.includes(clean)) potentialTags.push(clean);
+    dicionarioTags.forEach(tag => {
+      if (textoMinusculo.includes(tag) && !tagsDetectadas.includes(tag)) {
+        tagsDetectadas.push(tag);
       }
     });
 
-    // Cria uma descrição compacta
-    description = `Instrução importada do Discord sobre ${title}.`;
-
-    // Preenche o formulário CRUD com o processamento
+    // 3. Preenche automaticamente o formulário do painel administrativo
     this.selectedArticleId = null;
     this.formArticleId.value = '';
-    this.formTitle.value = title;
-    this.formCategory.value = category;
-    this.formTags.value = potentialTags.join(', ');
-    this.formDescription.value = description;
-    this.formSolution.value = solution;
+    this.formTitle.value = titulo.substring(0, 100); // Limita tamanho
+    this.formTags.value = tagsDetectadas.join(', ');
+    this.formDescription.value = `Importado do chat em ${new Date().toLocaleDateString('pt-BR')}`;
+    this.formSolution.value = solucao;
 
-    // Fecha modal do Discord e atualiza botões
+    // Extrai categorias baseando-se em palavras chaves do texto
+    let category = 'Geral';
+    if (textoMinusculo.includes('nfe') || textoMinusculo.includes('sefaz') || textoMinusculo.includes('imposto') || textoMinusculo.includes('nota')) {
+      category = 'Fiscal';
+    } else if (textoMinusculo.includes('banco') || textoMinusculo.includes('sql') || textoMinusculo.includes('query') || textoMinusculo.includes('lock')) {
+      category = 'Banco de Dados';
+    } else if (textoMinusculo.includes('impressora') || textoMinusculo.includes('bematech') || textoMinusculo.includes('balanca') || textoMinusculo.includes('serial') || textoMinusculo.includes('periferico')) {
+      category = 'Periféricos';
+    } else if (textoMinusculo.includes('instala') || textoMinusculo.includes('config') || textoMinusculo.includes('setup')) {
+      category = 'Instalação';
+    }
+    this.formCategory.value = category;
+
+    // Fecha o modal e avisa o usuário
     this.discordImportOverlay.classList.add('hidden');
     this.btnDeleteArticle.classList.add('hidden');
     this.btnSaveArticle.innerHTML = 'Cadastrar Novo Artigo';
-    
-    window.showToast('Texto do Discord processado! Verifique e ajuste os campos antes de salvar.', 'info');
+
+    window.showToast("Instrução convertida! Revise e clique em Salvar.", "success");
   }
 
   // --- GERENCIAMENTO DE CATEGORIAS DINÂMICAS ---
