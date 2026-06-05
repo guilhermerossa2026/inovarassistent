@@ -685,8 +685,8 @@ class AdminController {
       this.logsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Nenhuma interação registrada ainda.</td></tr>';
     }
 
-    // 6. Filtrar e Renderizar "Consultas Sem Resolução" (Zero resultados)
-    const unresolvedLogs = logs.filter(l => !l.articleId);
+    // 6. Filtrar e Renderizar "Consultas Sem Resolução" (Gargalos de Suporte - 0 resultados ou resolvido === false)
+    const unresolvedLogs = logs.filter(l => !l.articleId || l.resolved === false);
     const unresolvedGroups = {};
 
     unresolvedLogs.forEach(l => {
