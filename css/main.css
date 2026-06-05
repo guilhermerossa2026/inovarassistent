@@ -383,3 +383,10 @@ body {
     transform: translateX(0) scale(1);
   }
 }
+
+/* Foco de Acessibilidade do Teclado (Tab) */
+*:focus-visible {
+  outline: 2px solid var(--inovar-red);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--inovar-red-glow-strong) !important;
+}

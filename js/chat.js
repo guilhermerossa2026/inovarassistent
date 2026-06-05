@@ -7,6 +7,7 @@ class ChatController {
     this.activeUser = null;
     this.lastLoggedSearchId = null;
     this.lastMatchedArticleId = null;
+    this.isTypingResponse = false;
     
     this._initElements();
     this._bindEvents();
@@ -60,7 +61,9 @@ class ChatController {
     
     // Habilitar/Desabilitar botão de enviar com base no input
     this.chatInput.addEventListener('input', () => {
-      this.btnSend.disabled = this.chatInput.value.trim() === '';
+      if (!this.isTypingResponse) {
+        this.btnSend.disabled = this.chatInput.value.trim() === '';
+      }
     });
     this.btnSend.disabled = true; // Estado inicial
 
@@ -226,12 +229,15 @@ class ChatController {
   // --- OPERAÇÕES E BUSCAS NO CHAT ---
   handleSendMessage() {
     const query = this.chatInput.value.trim();
-    if (!query) return;
+    if (!query || this.isTypingResponse) return;
+
+    this.isTypingResponse = true;
+    this.chatInput.disabled = true;
+    this.btnSend.disabled = true;
 
     // 1. Renderiza mensagem do usuário no chat
     this.addUserMessageBubble(query);
     this.chatInput.value = '';
-    this.btnSend.disabled = true;
 
     // 2. Registra o log no banco local (inicialmente pendente)
     const log = window.storageService.logSearch(query, null, false);
@@ -244,8 +250,6 @@ class ChatController {
     setTimeout(() => {
       this.removeLoadingIndicatorBubble(loadingBubble);
       this.searchSolutions(query);
-      // Mantém o foco no input após a busca e envio de mensagem
-      if (this.chatInput) this.chatInput.focus();
     }, 120 + Math.random() * 120); // Latência reduzida de ~1.2s para ~0.2s para alta performance!
   }
 
@@ -408,11 +412,23 @@ class ChatController {
     this.chatHistory.appendChild(bubble);
     this.scrollToBottom();
 
+    // Reativa o input já que a árvore de decisão é exibida instantaneamente
+    this.isTypingResponse = false;
+    this.chatInput.disabled = false;
+    this.btnSend.disabled = this.chatInput.value.trim() === '';
+    if (this.chatInput) this.chatInput.focus();
+
     // Vincula eventos de clique aos botões de escolha rápida
     options.forEach((opt, idx) => {
       const btn = document.getElementById(`${uid}-${idx}`);
       if (btn) {
         btn.addEventListener('click', () => {
+          if (this.isTypingResponse) return;
+
+          this.isTypingResponse = true;
+          this.chatInput.disabled = true;
+          this.btnSend.disabled = true;
+
           // 1. Simula mensagem enviada pelo usuário
           this.addUserMessageBubble(`Opção selecionada: ${opt.text}`);
           
@@ -427,7 +443,6 @@ class ChatController {
           setTimeout(() => {
             this.removeLoadingIndicatorBubble(loading);
             this.searchSolutions(opt.target); // Busca direta usando o ID do artigo mapeado
-            if (this.chatInput) this.chatInput.focus();
           }, 150);
         });
       }
@@ -494,6 +509,10 @@ class ChatController {
   }
 
   addBotResponseBubble(markdownText, articleId = null, showActionButtons = false, showOnboardingChips = false) {
+    this.isTypingResponse = true;
+    if (this.chatInput) this.chatInput.disabled = true;
+    if (this.btnSend) this.btnSend.disabled = true;
+
     const bubble = document.createElement('div');
     bubble.className = 'message message-bot';
     
@@ -645,6 +664,13 @@ class ChatController {
         });
       }
 
+      this.isTypingResponse = false;
+      if (this.chatInput) {
+        this.chatInput.disabled = false;
+        this.btnSend.disabled = this.chatInput.value.trim() === '';
+        this.chatInput.focus();
+      }
+
       this.scrollToBottom();
     });
 
@@ -705,7 +731,11 @@ class ChatController {
       }
       
       if (item.type === 'element') {
-        parentDest.insertBefore(item.clonedNode, caret);
+        if (caret.parentNode === parentDest) {
+          parentDest.insertBefore(item.clonedNode, caret);
+        } else {
+          parentDest.appendChild(item.clonedNode);
+        }
         nodeMap.set(item.originalNode, item.clonedNode);
         nodeIndex++;
         setTimeout(typeNext, speed);
@@ -713,7 +743,11 @@ class ChatController {
         let destTextNode = nodeMap.get(item.originalNode);
         if (!destTextNode) {
           destTextNode = document.createTextNode('');
-          parentDest.insertBefore(destTextNode, caret);
+          if (caret.parentNode === parentDest) {
+            parentDest.insertBefore(destTextNode, caret);
+          } else {
+            parentDest.appendChild(destTextNode);
+          }
           nodeMap.set(item.originalNode, destTextNode);
         }
         

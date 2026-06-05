@@ -141,6 +141,177 @@ class AdminController {
     
     // Limpeza de logs
     this.btnClearLogs.addEventListener('click', () => this.clearLogs());
+
+    // Fechar modais ao clicar na área escura (fora do card)
+    this.adminModalOverlay.addEventListener('click', (e) => {
+      if (e.target === this.adminModalOverlay) {
+        this.exitAdmin();
+      }
+    });
+
+    this.categoriesModalOverlay.addEventListener('click', (e) => {
+      if (e.target === this.categoriesModalOverlay) {
+        this.openCategoriesModal(false);
+      }
+    });
+
+    this.discordImportOverlay.addEventListener('click', (e) => {
+      if (e.target === this.discordImportOverlay) {
+        this.openDiscordModal(false);
+      }
+    });
+
+    // Atalhos globais de teclado e gerenciamento de foco
+    document.addEventListener('keydown', (e) => {
+      // 1. Tecla ESCAPE: Fechar modais ou cancelar edições
+      if (e.key === 'Escape') {
+        if (!this.discordImportOverlay.classList.contains('hidden')) {
+          this.openDiscordModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (!this.categoriesModalOverlay.classList.contains('hidden')) {
+          this.openCategoriesModal(false);
+          e.preventDefault();
+          return;
+        }
+        if (!this.adminModalOverlay.classList.contains('hidden')) {
+          this.exitAdmin();
+          e.preventDefault();
+          return;
+        }
+        if (!this.adminView.classList.contains('hidden')) {
+          if (this.currentTab === 'settings' && this.selectedUsername) {
+            this.resetUserForm();
+            e.preventDefault();
+            return;
+          }
+          if (this.currentTab === 'articles' && this.selectedArticleId) {
+            this.resetFormForNew();
+            e.preventDefault();
+            return;
+          }
+          this.exitAdmin();
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // 2. Foco / Armadilha de Foco (Focus Trap) para Modais Abertos
+      if (e.key === 'Tab') {
+        let activeOverlay = null;
+        if (!this.discordImportOverlay.classList.contains('hidden')) {
+          activeOverlay = this.discordImportOverlay;
+        } else if (!this.categoriesModalOverlay.classList.contains('hidden')) {
+          activeOverlay = this.categoriesModalOverlay;
+        } else if (!this.adminModalOverlay.classList.contains('hidden')) {
+          activeOverlay = this.adminModalOverlay;
+        }
+
+        if (activeOverlay) {
+          const focusables = Array.from(activeOverlay.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )).filter(el => {
+            return !el.disabled && el.tabIndex !== -1 && el.offsetParent !== null;
+          });
+
+          if (focusables.length > 0) {
+            const firstEl = focusables[0];
+            const lastEl = focusables[focusables.length - 1];
+
+            if (e.shiftKey) {
+              if (document.activeElement === firstEl) {
+                lastEl.focus();
+                e.preventDefault();
+              }
+            } else {
+              if (document.activeElement === lastEl) {
+                firstEl.focus();
+                e.preventDefault();
+              }
+            }
+
+            // Garante que o foco permaneça dentro do modal se o usuário clicar fora e tentar usar tab
+            if (!activeOverlay.contains(document.activeElement)) {
+              firstEl.focus();
+              e.preventDefault();
+            }
+          } else {
+            e.preventDefault();
+          }
+        }
+      }
+
+      // 3. Tecla ENTER com modificadores (como envio ou salvamento rápido em inputs de texto)
+      if (e.key === 'Enter' && e.ctrlKey) {
+        if (!this.adminView.classList.contains('hidden')) {
+          if (this.currentTab === 'articles' && document.activeElement.form === this.articleForm) {
+            this.articleForm.requestSubmit ? this.articleForm.requestSubmit() : this.btnSaveArticle.click();
+            e.preventDefault();
+            return;
+          }
+          if (this.currentTab === 'settings' && (document.activeElement === this.userUsernameInput || document.activeElement === this.userPasswordInput)) {
+            this.handleRegisterUser();
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+
+      // 4. ATALHOS DE TECLADO (Apenas se não estiver digitando em inputs)
+      const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+
+      // Ctrl + Alt + A -> Toggle Admin Portal (Se operador logado for ADM)
+      if (e.ctrlKey && e.altKey && e.code === 'KeyA') {
+        const user = window.storageService.getCurrentUser();
+        if (user && user.role === 'ADM') {
+          if (this.adminView.classList.contains('hidden')) {
+            this.enterAdminDirectly();
+          } else {
+            this.exitAdmin();
+          }
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // Ctrl + F -> Focar campo de pesquisa/busca correspondente
+      if (e.ctrlKey && e.code === 'KeyF') {
+        if (!this.adminView.classList.contains('hidden') && this.currentTab === 'articles') {
+          if (this.adminSearchInput) {
+            this.adminSearchInput.focus();
+            this.adminSearchInput.select();
+            e.preventDefault();
+            return;
+          }
+        }
+        if (this.adminView.classList.contains('hidden')) {
+          const chatInput = document.getElementById('chat-input');
+          if (chatInput && !chatInput.disabled) {
+            chatInput.focus();
+            chatInput.select();
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+
+      // Ctrl + N -> Novo Artigo ou Novo Operador no Admin
+      if (e.ctrlKey && e.code === 'KeyN') {
+        if (!this.adminView.classList.contains('hidden')) {
+          if (this.currentTab === 'articles') {
+            this.resetFormForNew();
+            e.preventDefault();
+            return;
+          }
+          if (this.currentTab === 'settings') {
+            this.resetUserForm();
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+    });
   }
 
   // --- CONTROLE DE SENHA & PORTAL ---
@@ -231,6 +402,12 @@ class AdminController {
       this.tabArticlesBtn.classList.add('active');
       this.tabArticlesContent.classList.remove('hidden');
       this.renderArticlesList();
+      setTimeout(() => {
+        if (this.adminSearchInput) {
+          this.adminSearchInput.focus();
+          this.adminSearchInput.select();
+        }
+      }, 80);
     } else if (tab === 'reports') {
       this.tabReportsBtn.classList.add('active');
       this.tabReportsContent.classList.remove('hidden');
