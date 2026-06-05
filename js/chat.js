@@ -48,14 +48,19 @@ function pesquisarNaBase(query) {
         score += 10;
       }
       
-      // Regra 2: Se o termo estiver contido no TÍTULO
-      if (tituloLimpo.includes(termo)) {
-        score += 5;
+      // Regra 2: Se o termo bater com uma palavra inteira no TÍTULO
+      const regexPalavraInteira = new RegExp(`\\b${termo}\\b`, 'i');
+      if (regexPalavraInteira.test(tituloLimpo)) {
+        score += 5; // Palavra exata no título
+      } else if (tituloLimpo.includes(termo) && termo.length > 3) {
+        score += 2; // Parcial se for uma palavra longa
       }
 
-      // Regra 3: Se o termo estiver contido na DESCRIÇÃO
-      if (descricaoLimpa.includes(termo)) {
-        score += 2;
+      // Regra 3: Se o termo bater com uma palavra inteira na DESCRIÇÃO
+      if (regexPalavraInteira.test(descricaoLimpa)) {
+        score += 2; // Palavra exata na descrição
+      } else if (descricaoLimpa.includes(termo) && termo.length > 3) {
+        score += 1; // Parcial se for uma palavra longa
       }
     });
 
@@ -913,7 +918,7 @@ class ChatController {
     html = html.replace(/&gt; (.*?)(?:<\/p>|$)/g, '<blockquote><p>$1</p></blockquote>');
 
     // Código em Bloco com quebras de linha (Ex: ```sql ... ```)
-    html = html.replace(/```(.*?)\r?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+    html = html.replace(/```(.*?)\r?\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>');
     // Códigos em bloco simples sem linguagem especificada
     html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
 

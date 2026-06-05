@@ -7,6 +7,7 @@ class AdminController {
     this.correctPasswordHash = '7cbff456e792c5a2c4e61db1d77c1a0172dc70a92d47c72477c7a52e008d51ee'; // Hash SHA-256 da senha 'inovaradmin'
     this.isAuthenticated = false;
     this.selectedUsername = null; // Username do operador em edição
+    this.pendingUnresolvedQuery = null; // Termo original de busca frustrada para resolução retroativa
     
     this._initElements();
     this._bindEvents();
@@ -481,6 +482,7 @@ class AdminController {
 
   selectArticle(id) {
     this.selectedArticleId = id;
+    this.pendingUnresolvedQuery = null;
     
     // Atualiza seleção na lista lateral
     const cards = this.kbListContainer.querySelectorAll('.kb-item-card');
@@ -511,6 +513,7 @@ class AdminController {
 
   resetFormForNew() {
     this.selectedArticleId = null;
+    this.pendingUnresolvedQuery = null;
     
     // Remove seleções visuais
     const cards = this.kbListContainer.querySelectorAll('.kb-item-card');
@@ -559,12 +562,20 @@ class AdminController {
       // Editar existente
       const success = window.storageService.updateKnowledge(id, itemData);
       if (success) {
+        if (this.pendingUnresolvedQuery) {
+          window.storageService.resolveQueryLogsRetroactively(this.pendingUnresolvedQuery, id);
+          this.pendingUnresolvedQuery = null;
+        }
         window.showToast('Artigo de conhecimento atualizado com sucesso!', 'success');
       }
     } else {
       // Adicionar novo
       const newItem = window.storageService.addKnowledge(itemData);
       this.selectedArticleId = newItem.id;
+      if (this.pendingUnresolvedQuery) {
+        window.storageService.resolveQueryLogsRetroactively(this.pendingUnresolvedQuery, newItem.id);
+        this.pendingUnresolvedQuery = null;
+      }
       window.showToast('Novo artigo cadastrado com sucesso!', 'success');
     }
 
@@ -574,6 +585,9 @@ class AdminController {
     } else {
       this.resetFormForNew();
     }
+    
+    // Atualiza relatórios para limpar o gargalo de suporte resolvido retroativamente
+    this.loadReports();
   }
 
   deleteArticle() {
@@ -734,6 +748,9 @@ class AdminController {
               this.switchTab('articles');
               this.resetFormForNew();
               
+              // Guarda o termo frustrado original para resolver retroativamente no salvamento
+              this.pendingUnresolvedQuery = item.query;
+              
               // Preenche título com o termo buscado de forma limpa
               const capitalised = item.query.charAt(0).toUpperCase() + item.query.slice(1);
               this.formTitle.value = `Erro: ${capitalised}`;
@@ -849,16 +866,35 @@ class AdminController {
     this.formDescription.value = `Importado do chat em ${new Date().toLocaleDateString('pt-BR')}`;
     this.formSolution.value = solucao;
 
-    // Extrai categorias baseando-se em palavras chaves do texto
+    // Extrai categorias baseando-se em palavras chaves do texto cruzar dinamicamente com o banco
+    const categoriasExistentes = window.storageService.getCategories();
     let category = 'Geral';
-    if (textoMinusculo.includes('nfe') || textoMinusculo.includes('sefaz') || textoMinusculo.includes('imposto') || textoMinusculo.includes('nota')) {
-      category = 'Fiscal';
-    } else if (textoMinusculo.includes('banco') || textoMinusculo.includes('sql') || textoMinusculo.includes('query') || textoMinusculo.includes('lock')) {
-      category = 'Banco de Dados';
-    } else if (textoMinusculo.includes('impressora') || textoMinusculo.includes('bematech') || textoMinusculo.includes('balanca') || textoMinusculo.includes('serial') || textoMinusculo.includes('periferico')) {
-      category = 'Periféricos';
-    } else if (textoMinusculo.includes('instala') || textoMinusculo.includes('config') || textoMinusculo.includes('setup')) {
-      category = 'Instalação';
+
+    // 1. Tenta encontrar se o nome de alguma das categorias dinâmicas aparece no texto
+    for (const cat of categoriasExistentes) {
+      const catLimpa = cat.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const textoLimpo = textoMinusculo.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (textoLimpo.includes(catLimpa)) {
+        category = cat;
+        break;
+      }
+    }
+
+    // 2. Fallback inteligente usando palavras chaves clássicas mapeadas nas categorias dinâmicas
+    if (category === 'Geral') {
+      if (textoMinusculo.includes('nfe') || textoMinusculo.includes('sefaz') || textoMinusculo.includes('imposto') || textoMinusculo.includes('nota')) {
+        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'fiscal');
+        if (found) category = found;
+      } else if (textoMinusculo.includes('banco') || textoMinusculo.includes('sql') || textoMinusculo.includes('query') || textoMinusculo.includes('lock')) {
+        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'banco de dados');
+        if (found) category = found;
+      } else if (textoMinusculo.includes('impressora') || textoMinusculo.includes('bematech') || textoMinusculo.includes('balanca') || textoMinusculo.includes('serial') || textoMinusculo.includes('periferico')) {
+        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'perifericos');
+        if (found) category = found;
+      } else if (textoMinusculo.includes('instala') || textoMinusculo.includes('config') || textoMinusculo.includes('setup')) {
+        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'instalacao');
+        if (found) category = found;
+      }
     }
     this.formCategory.value = category;
 

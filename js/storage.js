@@ -413,6 +413,26 @@ class StorageService {
   clearLogs() {
     this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify([]));
   }
+ 
+  resolveQueryLogsRetroactively(query, articleId) {
+    const logs = this.getLogs();
+    const cleanTarget = query.trim().toLowerCase();
+    let updated = false;
+    
+    logs.forEach(log => {
+      if ((!log.articleId || log.resolved === false) && log.query.trim().toLowerCase() === cleanTarget) {
+        log.resolved = true;
+        log.articleId = articleId;
+        updated = true;
+      }
+    });
+    
+    if (updated) {
+      this._setItem(STORAGE_KEYS.SEARCH_LOGS, JSON.stringify(logs));
+      return true;
+    }
+    return false;
+  }
 
   // --- IMPORTAÇÃO / EXPORTAÇÃO (DISTRIBUIÇÃO OFFLINE) ---
   exportDatabase() {
