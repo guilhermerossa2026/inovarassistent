@@ -1154,7 +1154,6 @@ class AdminController {
       // Limpa e instrui sobre alteração opcional de senha
       this.userPasswordInput.value = '';
       this.userPasswordInput.placeholder = 'Deixar em branco para manter a mesma';
-      this.userPasswordInput.required = false; 
       
       this.userRoleInput.value = (user.role === 'ADM') ? 'ADM' : 'NORMAL';
       
@@ -1184,7 +1183,6 @@ class AdminController {
     
     this.userPasswordInput.value = '';
     this.userPasswordInput.placeholder = 'Senha do operador...';
-    this.userPasswordInput.required = true;
     
     this.userRoleInput.value = 'NORMAL';
     
