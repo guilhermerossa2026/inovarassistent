@@ -47,12 +47,30 @@ class AdminController {
     this.btnExportDb = document.getElementById('btn-export-db');
     this.fileImportDb = document.getElementById('file-import-db');
     
-    // Importador Discord
+    // Importador Discord (3 Colunas)
     this.btnOpenDiscordImport = document.getElementById('btn-open-discord-import');
     this.discordImportOverlay = document.getElementById('discord-import-overlay');
-    this.discordPasteArea = document.getElementById('discord-paste-area');
-    this.btnProcessDiscord = document.getElementById('btn-process-discord');
     this.btnCancelDiscord = document.getElementById('btn-cancel-discord');
+    this.settingsDiscordToken = document.getElementById('settings-discord-token');
+    this.settingsDiscordGuild = document.getElementById('settings-discord-guild');
+    this.discordChannelsTree = document.getElementById('discord-channels-tree');
+    this.discordMsgContainer = document.getElementById('discord-msg-container');
+    this.discordMsgPreviewPanel = document.getElementById('discord-msg-preview-panel');
+    this.discordHideImported = document.getElementById('discord-hide-imported');
+    this.btnImportBulkDiscord = document.getElementById('btn-import-bulk-discord');
+
+    // Assistente de Curadoria (Wizard)
+    this.discordCurationWizard = document.getElementById('discord-curation-wizard');
+    this.curationQueueIndicator = document.getElementById('curation-queue-indicator');
+    this.curationMsgOriginal = document.getElementById('curation-msg-original');
+    this.curationTitle = document.getElementById('curation-title');
+    this.curationCategory = document.getElementById('curation-category');
+    this.curationTags = document.getElementById('curation-tags');
+    this.curationDescription = document.getElementById('curation-description');
+    this.curationSolution = document.getElementById('curation-solution');
+    this.btnCurationDiscard = document.getElementById('btn-curation-discard');
+    this.btnCurationDraft = document.getElementById('btn-curation-draft');
+    this.btnCurationPublish = document.getElementById('btn-curation-publish');
     
     // Gerenciador de Categorias Dinâmicas
     this.btnManageCategories = document.getElementById('btn-manage-categories');
@@ -78,6 +96,12 @@ class AdminController {
     this.settingsMenuBarCheckbox = document.getElementById('settings-menu-bar-checkbox');
     this.settingsAutoScrollCheckbox = document.getElementById('settings-auto-scroll-checkbox');
     this.btnResetDb = document.getElementById('btn-reset-db');
+    
+    // Cloud Sync
+    this.settingsSyncUrl = document.getElementById('settings-sync-url');
+    this.settingsSyncToken = document.getElementById('settings-sync-token');
+    this.syncStatusText = document.getElementById('sync-status-text');
+    this.btnCloudSync = document.getElementById('btn-cloud-sync');
     
     // Métricas/Relatórios
     this.metricTotalSearches = document.getElementById('metric-total-searches');
@@ -115,10 +139,23 @@ class AdminController {
     this.btnExportDb.addEventListener('click', () => this.exportDatabase());
     this.fileImportDb.addEventListener('change', (e) => this.importDatabase(e));
 
-    // Importador do Discord
+    // Importador do Discord (3 Colunas)
     this.btnOpenDiscordImport.addEventListener('click', () => this.openDiscordModal(true));
     this.btnCancelDiscord.addEventListener('click', () => this.openDiscordModal(false));
-    this.btnProcessDiscord.addEventListener('click', () => this.processDiscordText());
+    this.discordHideImported.addEventListener('change', () => this.renderDiscordMessages());
+    this.btnImportBulkDiscord.addEventListener('click', () => this.startCurationWizard());
+    
+    if (this.settingsDiscordToken) {
+      this.settingsDiscordToken.addEventListener('change', () => this.saveDiscordSettings());
+    }
+    if (this.settingsDiscordGuild) {
+      this.settingsDiscordGuild.addEventListener('change', () => this.saveDiscordSettings());
+    }
+
+    // Assistente de Curadoria (Wizard)
+    this.btnCurationDiscard.addEventListener('click', () => this.handleCurationDiscard());
+    this.btnCurationDraft.addEventListener('click', () => this.handleCurationDraft());
+    this.btnCurationPublish.addEventListener('click', () => this.handleCurationPublish());
     
     // Gerenciador de Categorias
     this.btnManageCategories.addEventListener('click', () => this.openCategoriesModal(true));
@@ -140,6 +177,17 @@ class AdminController {
     this.settingsMenuBarCheckbox.addEventListener('change', () => this.saveSettingsMenuBar());
     this.settingsAutoScrollCheckbox.addEventListener('change', () => this.saveSettingsAutoScroll());
     this.btnResetDb.addEventListener('click', () => this.handleResetDatabase());
+    
+    // Cloud Sync
+    if (this.btnCloudSync) {
+      this.btnCloudSync.addEventListener('click', () => this.handleCloudSync());
+    }
+    if (this.settingsSyncUrl) {
+      this.settingsSyncUrl.addEventListener('change', () => this.saveSyncSettings());
+    }
+    if (this.settingsSyncToken) {
+      this.settingsSyncToken.addEventListener('change', () => this.saveSyncSettings());
+    }
     
     // Limpeza de logs
     this.btnClearLogs.addEventListener('click', () => this.clearLogs());
@@ -163,10 +211,23 @@ class AdminController {
       }
     });
 
+    this.discordCurationWizard.addEventListener('click', (e) => {
+      if (e.target === this.discordCurationWizard) {
+        this.forceDraftRemainingCurationItems();
+        this.discordCurationWizard.classList.add('hidden');
+      }
+    });
+
     // Atalhos globais de teclado e gerenciamento de foco
     document.addEventListener('keydown', (e) => {
       // 1. Tecla ESCAPE: Fechar modais ou cancelar edições
       if (e.key === 'Escape') {
+        if (!this.discordCurationWizard.classList.contains('hidden')) {
+          this.forceDraftRemainingCurationItems();
+          this.discordCurationWizard.classList.add('hidden');
+          e.preventDefault();
+          return;
+        }
         if (!this.discordImportOverlay.classList.contains('hidden')) {
           this.openDiscordModal(false);
           e.preventDefault();
@@ -816,94 +877,600 @@ class AdminController {
     e.target.value = ''; // Reseta input de arquivo
   }
 
-  // --- IMPORTADOR DISCORD ---
-  openDiscordModal(open) {
+  // --- IMPORTADOR DISCORD (3 COLUNAS) ---
+  async openDiscordModal(open) {
     if (open) {
+      const user = window.storageService.getCurrentUser();
+      if (!user || user.role !== 'ADM') {
+        window.showToast('Acesso negado. Apenas administradores (ADM) podem importar dados do Discord.', 'error');
+        return;
+      }
+
+      const settings = window.storageService.getSettings();
+      if (!settings.discordBotToken || !settings.discordGuildId) {
+        window.showToast('Por favor, configure o Token do Bot e o ID do Servidor Discord nas Configurações primeiro.', 'warning');
+        return;
+      }
+
       this.discordImportOverlay.classList.remove('hidden');
-      this.discordPasteArea.value = '';
-      this.discordPasteArea.focus();
+      this.activeDiscordChannelId = null;
+      this.activeDiscordChannelName = '';
+      this.discordMessagesCache = [];
+      this.selectedMessageIds = new Set();
+      
+      // Reseta visualização
+      this.discordMsgContainer.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 2rem;">Selecione um canal</div>';
+      this.discordMsgPreviewPanel.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 4rem;">Selecione uma mensagem para visualizar</div>';
+      this.btnImportBulkDiscord.disabled = true;
+
+      await this.loadDiscordChannels();
     } else {
       this.discordImportOverlay.classList.add('hidden');
     }
   }
 
-  processDiscordText() {
-    const txtBruto = this.discordPasteArea.value;
-    if (!txtBruto.trim()) {
-      window.showToast("Cole algum texto antes de processar.", "warning");
+  async _getDecryptedDiscordToken() {
+    const settings = window.storageService.getSettings();
+    const token = settings.discordBotToken || '';
+    if (token && window.api && typeof window.api.decryptString === 'function') {
+      try {
+        return await window.api.decryptString(token);
+      } catch (err) {
+        console.error("Erro ao decifrar token:", err);
+      }
+    }
+    return token;
+  }
+
+  async loadDiscordChannels() {
+    this.discordChannelsTree.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 2rem;">Carregando canais...</div>';
+    
+    try {
+      const settings = window.storageService.getSettings();
+      const token = await this._getDecryptedDiscordToken();
+      const channels = await window.api.fetchDiscordChannels(settings.discordGuildId, token);
+      
+      if (channels.error) {
+        throw new Error(channels.error);
+      }
+
+      // Separa categorias e canais de texto
+      const categories = channels.filter(c => c.type === 4);
+      const textChannels = channels.filter(c => c.type === 0);
+
+      this.discordChannelsTree.innerHTML = '';
+
+      // Agrupa por categoria
+      categories.sort((a, b) => a.position - b.position);
+      
+      categories.forEach(cat => {
+        const catChannels = textChannels
+          .filter(c => c.parent_id === cat.id)
+          .sort((a, b) => a.position - b.position);
+
+        if (catChannels.length === 0) return; // Oculta categorias vazias
+
+        const catGroup = document.createElement('div');
+        catGroup.className = 'discord-category-group';
+        
+        catGroup.innerHTML = `
+          <div class="discord-category-header">
+            <input type="checkbox" class="discord-category-check" style="width: auto; cursor: pointer; margin: 0;" data-cat-id="${cat.id}">
+            <span>${this._escapeHTML(cat.name)}</span>
+          </div>
+          <div class="discord-category-channels" id="cat-channels-${cat.id}"></div>
+        `;
+
+        const channelsContainer = catGroup.querySelector(`#cat-channels-${cat.id}`);
+        
+        catChannels.forEach(chan => {
+          const item = document.createElement('div');
+          item.className = 'discord-channel-item';
+          item.dataset.chanId = chan.id;
+          item.dataset.chanName = chan.name;
+          
+          item.innerHTML = `
+            <input type="checkbox" class="discord-chan-check" style="width: auto; cursor: pointer; margin: 0;" data-chan-id="${chan.id}">
+            <span># ${this._escapeHTML(chan.name)}</span>
+          `;
+
+          // Evento de clique para selecionar canal (sem propagar para o checkbox do canal)
+          item.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            
+            // Remove active dos outros canais
+            const actives = this.discordChannelsTree.querySelectorAll('.discord-channel-item.active');
+            actives.forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+
+            this.selectDiscordChannel(chan.id, chan.name);
+          });
+
+          channelsContainer.appendChild(item);
+        });
+
+        // Evento do Checkbox de Categoria (Selecionar/Deselecionar todos da categoria)
+        const catCheck = catGroup.querySelector('.discord-category-check');
+        catCheck.addEventListener('change', () => {
+          const childChecks = channelsContainer.querySelectorAll('.discord-chan-check');
+          childChecks.forEach(cb => {
+            cb.checked = catCheck.checked;
+          });
+        });
+
+        this.discordChannelsTree.appendChild(catGroup);
+      });
+
+      // Se houver canais de texto sem categoria (órfãos)
+      const orphanChannels = textChannels.filter(c => !c.parent_id).sort((a, b) => a.position - b.position);
+      if (orphanChannels.length > 0) {
+        const catGroup = document.createElement('div');
+        catGroup.className = 'discord-category-group';
+        catGroup.innerHTML = `
+          <div class="discord-category-header">Canais Sem Categoria</div>
+          <div class="discord-category-channels" id="cat-channels-orphans"></div>
+        `;
+        const channelsContainer = catGroup.querySelector('#cat-channels-orphans');
+        orphanChannels.forEach(chan => {
+          const item = document.createElement('div');
+          item.className = 'discord-channel-item';
+          item.dataset.chanId = chan.id;
+          item.dataset.chanName = chan.name;
+          item.innerHTML = `
+            <input type="checkbox" class="discord-chan-check" style="width: auto; cursor: pointer; margin: 0;" data-chan-id="${chan.id}">
+            <span># ${this._escapeHTML(chan.name)}</span>
+          `;
+          item.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            const actives = this.discordChannelsTree.querySelectorAll('.discord-channel-item.active');
+            actives.forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+            this.selectDiscordChannel(chan.id, chan.name);
+          });
+          channelsContainer.appendChild(item);
+        });
+        this.discordChannelsTree.appendChild(catGroup);
+      }
+
+    } catch (e) {
+      window.showToast(`Falha ao carregar canais do Discord: ${e.message}`, 'error');
+      this.discordChannelsTree.innerHTML = '<div style="font-size: 0.8rem; color: var(--color-danger); text-align: center; padding-top: 2rem;">Falha na conexão</div>';
+    }
+  }
+
+  async selectDiscordChannel(channelId, channelName) {
+    this.activeDiscordChannelId = channelId;
+    this.activeDiscordChannelName = channelName;
+    await this.renderDiscordMessages();
+  }
+
+  async renderDiscordMessages() {
+    if (!this.activeDiscordChannelId) return;
+
+    this.discordMsgContainer.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 1rem;">
+        <div class="skeleton-box skeleton-text" style="width: 70%;"></div>
+        <div class="skeleton-box skeleton-text"></div>
+        <div class="skeleton-box skeleton-text"></div>
+      </div>
+    `;
+
+    try {
+      const token = await this._getDecryptedDiscordToken();
+      const messages = await window.api.fetchDiscordMessages(this.activeDiscordChannelId, token);
+
+      if (messages.error) {
+        throw new Error(messages.error);
+      }
+
+      this.discordMessagesCache = messages;
+      this.discordMsgContainer.innerHTML = '';
+
+      if (messages.length === 0) {
+        this.discordMsgContainer.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 2rem;">Nenhuma mensagem neste canal</div>';
+        return;
+      }
+
+      const hideImported = this.discordHideImported.checked;
+      const kb = window.storageService.getKnowledge();
+
+      let visibleCount = 0;
+
+      messages.forEach(msg => {
+        // Verifica se a mensagem já foi importada
+        const isImported = kb.some(art => art.discordMessageId === msg.id);
+
+        if (hideImported && isImported) return;
+
+        visibleCount++;
+
+        const card = document.createElement('div');
+        card.className = 'discord-msg-card';
+        card.dataset.msgId = msg.id;
+
+        const initials = msg.author.username.substring(0, 2).toUpperCase();
+        const date = new Date(msg.timestamp).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
+        card.innerHTML = `
+          <input type="checkbox" class="discord-msg-check" style="width: auto; cursor: pointer; margin: 0; align-self: center;" data-msg-id="${msg.id}" ${isImported ? 'disabled' : ''}>
+          <div class="discord-msg-avatar">${initials}</div>
+          <div class="discord-msg-meta">
+            <div class="discord-msg-author">
+              <span>${this._escapeHTML(msg.author.username)}</span>
+              <span class="discord-msg-time">${date}</span>
+            </div>
+            <div class="discord-msg-text">${this._escapeHTML(msg.content)}</div>
+            ${isImported ? '<div style="margin-top: 0.2rem;"><span class="badge badge-success">Já Importado</span></div>' : ''}
+          </div>
+        `;
+
+        card.addEventListener('click', (e) => {
+          if (e.target.tagName === 'INPUT') {
+            this.updateImportButtonState();
+            return;
+          }
+          
+          const actives = this.discordMsgContainer.querySelectorAll('.discord-msg-card.active');
+          actives.forEach(el => el.classList.remove('active'));
+          card.classList.add('active');
+
+          this.showDiscordMessagePreview(msg);
+        });
+
+        this.discordMsgContainer.appendChild(card);
+      });
+
+      if (visibleCount === 0) {
+        this.discordMsgContainer.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 2rem;">Postagens ocultadas (filtros ativos)</div>';
+      }
+
+    } catch (e) {
+      window.showToast(`Erro ao carregar mensagens: ${e.message}`, 'error');
+      this.discordMsgContainer.innerHTML = '<div style="font-size: 0.8rem; color: var(--color-danger); text-align: center; padding-top: 2rem;">Erro na busca</div>';
+    }
+  }
+
+  showDiscordMessagePreview(msg) {
+    this.discordMsgPreviewPanel.innerHTML = '';
+
+    const preview = document.createElement('div');
+    preview.style.display = 'flex';
+    preview.style.flexDirection = 'column';
+    preview.style.gap = '0.75rem';
+
+    const date = new Date(msg.timestamp).toLocaleString('pt-BR');
+
+    // Monta anexos se existirem
+    let attachmentsHTML = '';
+    if (msg.attachments && msg.attachments.length > 0) {
+      attachmentsHTML = '<div class="discord-preview-attachments">';
+      msg.attachments.forEach(att => {
+        if (att.content_type && att.content_type.startsWith('image/')) {
+          attachmentsHTML += `<img src="${att.url}" class="discord-preview-img" title="${this._escapeHTML(att.filename)}">`;
+        } else {
+          attachmentsHTML += `<div style="font-size: 0.75rem; color: var(--inovar-red); text-decoration: underline; cursor: pointer;" onclick="window.api.openExternalLink('${att.url}')">[Anexo: ${this._escapeHTML(att.filename)}]</div>`;
+        }
+      });
+      attachmentsHTML += '</div>';
+    }
+
+    preview.innerHTML = `
+      <div class="discord-preview-header">
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">${this._escapeHTML(msg.author.username)}</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted);">${date}</div>
+      </div>
+      <div class="discord-preview-body">${this.renderMarkdownSimple(msg.content)}</div>
+      ${attachmentsHTML}
+    `;
+
+    this.discordMsgPreviewPanel.appendChild(preview);
+  }
+
+  updateImportButtonState() {
+    const checkedBoxes = this.discordMsgContainer.querySelectorAll('.discord-msg-check:checked');
+    this.btnImportBulkDiscord.disabled = checkedBoxes.length === 0;
+  }
+
+  renderMarkdownSimple(text) {
+    if (!text) return '';
+    let escaped = this._escapeHTML(text);
+    // Transforma blocos de código
+    escaped = escaped.replace(/```([\s\S]*?)```/g, '<pre style="background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 4px; font-family: monospace; border: 1px solid var(--border-color); overflow-x: auto; margin: 0.5rem 0;">$1</pre>');
+    // Transforma negrito
+    escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Quebras de linha
+    escaped = escaped.replace(/\n/g, '<br>');
+    return escaped;
+  }
+
+  // --- MOTOR DE CURADORIA E WIZARD DE VALIDAÇÃO ---
+  async startCurationWizard() {
+    const checkedBoxes = this.discordMsgContainer.querySelectorAll('.discord-msg-check:checked');
+    if (checkedBoxes.length === 0) return;
+
+    this.curationQueue = [];
+    this.currentCurationIndex = 0;
+
+    // Bloqueia botão e exibe carregamento
+    const originalText = this.btnImportBulkDiscord.innerHTML;
+    this.btnImportBulkDiscord.disabled = true;
+    this.btnImportBulkDiscord.innerHTML = 'Baixando anexos...';
+
+    const token = await this._getDecryptedDiscordToken();
+
+    for (const box of checkedBoxes) {
+      const msgId = box.dataset.msgId;
+      const msg = this.discordMessagesCache.find(m => m.id === msgId);
+      if (!msg) continue;
+
+      const localImages = [];
+
+      // Download de imagens de anexo offline-first
+      if (msg.attachments && msg.attachments.length > 0) {
+        for (const att of msg.attachments) {
+          if (att.content_type && att.content_type.startsWith('image/')) {
+            try {
+              const res = await window.api.downloadDiscordImage(att.url, token);
+              if (res.success) {
+                localImages.push(res.fileName);
+              }
+            } catch (err) {
+              console.error("Erro ao baixar anexo:", err);
+            }
+          }
+        }
+      }
+
+      this.curationQueue.push({
+        messageId: msg.id,
+        channelName: this.activeDiscordChannelName,
+        contentBruto: msg.content,
+        author: msg.author.username,
+        timestamp: msg.timestamp,
+        localImages: localImages
+      });
+    }
+
+    // Libera botão
+    this.btnImportBulkDiscord.disabled = false;
+    this.btnImportBulkDiscord.innerHTML = originalText;
+
+    // Abre o Wizard
+    this.discordImportOverlay.classList.add('hidden'); // Oculta o explorador
+    this.discordCurationWizard.classList.remove('hidden');
+
+    this.populateCurationCategories();
+    this.loadCurationItem(0);
+  }
+
+  populateCurationCategories() {
+    this.curationCategory.innerHTML = '';
+    const categories = window.storageService.getCategories();
+    categories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat;
+      option.textContent = cat;
+      this.curationCategory.appendChild(option);
+    });
+  }
+
+  loadCurationItem(index) {
+    if (index < 0 || index >= this.curationQueue.length) {
+      this.finishCurationWizard();
       return;
     }
 
-    let titulo = "";
-    let solucao = txtBruto;
-    let tagsDetectadas = [];
+    this.currentCurationIndex = index;
+    this.curationQueueIndicator.textContent = `Item ${index + 1} de ${this.curationQueue.length}`;
 
-    // 1. Tenta pegar a primeira linha em negrito como o Título (ex: **Erro de Timeout**)
-    const boldMatch = txtBruto.match(/\*\*(.*?)\*\*/);
-    if (boldMatch && boldMatch[1]) {
-      titulo = boldMatch[1].trim();
-    } else {
-      // Fallback: pega a primeira linha do texto como título
-      const linhas = txtBruto.split('\n');
-      titulo = linhas[0].replace(/[#*_-]/g, "").trim();
+    const item = this.curationQueue[index];
+
+    // Coluna Esquerda: Texto original e imagens
+    this.curationMsgOriginal.innerHTML = '';
+    const rawContentDiv = document.createElement('div');
+    rawContentDiv.innerHTML = `
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3rem;">
+        <strong>Enviado por:</strong> ${this._escapeHTML(item.author)} em ${new Date(item.timestamp).toLocaleString('pt-BR')}
+        <br><strong>Canal:</strong> #${this._escapeHTML(item.channelName)}
+      </div>
+      <div style="font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; font-family: monospace; background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: 4px; border: 1px solid var(--border-color);">${this._escapeHTML(item.contentBruto)}</div>
+    `;
+    this.curationMsgOriginal.appendChild(rawContentDiv);
+
+    if (item.localImages && item.localImages.length > 0) {
+      const imgContainer = document.createElement('div');
+      imgContainer.style.marginTop = '1rem';
+      imgContainer.style.display = 'flex';
+      imgContainer.style.flexDirection = 'column';
+      imgContainer.style.gap = '0.5rem';
+      
+      item.localImages.forEach(imgName => {
+        const img = document.createElement('img');
+        img.src = `local-image://${imgName}`;
+        img.className = 'discord-preview-img';
+        img.style.maxHeight = '180px';
+        imgContainer.appendChild(img);
+      });
+      this.curationMsgOriginal.appendChild(imgContainer);
     }
 
-    // 2. Tenta extrair palavras técnicas comuns no seu dia a dia para sugerir como Tags
-    const dicionarioTags = ['sefaz', 'filizola', 'timeout', 'deadlock', 'banco', 'sql', 'porta', 'serial', 'com1', 'nfe', 'pdv', 'impressora'];
-    const textoMinusculo = txtBruto.toLowerCase();
+    // Coluna Direita: Aplicar Motor de Conversão (Heurísticas)
+    const converted = this.runCurationHeuristics(item);
+
+    // Preenche campos
+    this.curationTitle.value = converted.title;
+    this.curationCategory.value = converted.category;
+    this.curationTags.value = converted.tags.join(', ');
+    this.curationDescription.value = converted.description;
+    this.curationSolution.value = converted.solution;
+  }
+
+  runCurationHeuristics(item) {
+    const text = item.contentBruto || '';
     
-    dicionarioTags.forEach(tag => {
-      if (textoMinusculo.includes(tag) && !tagsDetectadas.includes(tag)) {
-        tagsDetectadas.push(tag);
-      }
-    });
+    // Heurística 1: Título
+    let title = '';
+    const boldMatch = text.match(/\*\*(.*?)\*\*/);
+    if (boldMatch && boldMatch[1]) {
+      title = boldMatch[1].trim();
+    } else {
+      const lines = text.split('\n');
+      title = lines[0].replace(/[#*_-]/g, "").trim();
+    }
+    if (title.length > 80) title = title.substring(0, 80) + '...';
 
-    // 3. Preenche automaticamente o formulário do painel administrativo
-    this.selectedArticleId = null;
-    this.formArticleId.value = '';
-    this.formTitle.value = titulo.substring(0, 100); // Limita tamanho
-    this.formTags.value = tagsDetectadas.join(', ');
-    this.formDescription.value = `Importado do chat em ${new Date().toLocaleDateString('pt-BR')}`;
-    this.formSolution.value = solucao;
-
-    // Extrai categorias baseando-se em palavras chaves do texto cruzar dinamicamente com o banco
-    const categoriasExistentes = window.storageService.getCategories();
+    // Heurística 2: Categoria baseada no Canal do Discord
+    const categories = window.storageService.getCategories();
     let category = 'Geral';
-
-    // 1. Tenta encontrar se o nome de alguma das categorias dinâmicas aparece no texto
-    for (const cat of categoriasExistentes) {
-      const catLimpa = cat.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const textoLimpo = textoMinusculo.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      if (textoLimpo.includes(catLimpa)) {
+    const cleanChannel = item.channelName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (const cat of categories) {
+      const cleanCat = cat.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+      if (cleanChannel.includes(cleanCat) || cleanCat.includes(cleanChannel)) {
         category = cat;
         break;
       }
     }
 
-    // 2. Fallback inteligente usando palavras chaves clássicas mapeadas nas categorias dinâmicas
-    if (category === 'Geral') {
-      if (textoMinusculo.includes('nfe') || textoMinusculo.includes('sefaz') || textoMinusculo.includes('imposto') || textoMinusculo.includes('nota')) {
-        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'fiscal');
-        if (found) category = found;
-      } else if (textoMinusculo.includes('banco') || textoMinusculo.includes('sql') || textoMinusculo.includes('query') || textoMinusculo.includes('lock')) {
-        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'banco de dados');
-        if (found) category = found;
-      } else if (textoMinusculo.includes('impressora') || textoMinusculo.includes('bematech') || textoMinusculo.includes('balanca') || textoMinusculo.includes('serial') || textoMinusculo.includes('periferico')) {
-        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'perifericos');
-        if (found) category = found;
-      } else if (textoMinusculo.includes('instala') || textoMinusculo.includes('config') || textoMinusculo.includes('setup')) {
-        const found = categoriasExistentes.find(c => c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'instalacao');
-        if (found) category = found;
+    // Heurística 3: Tags baseadas em dicionário técnico
+    const dicionarioTags = ['sefaz', 'filizola', 'timeout', 'deadlock', 'banco', 'sql', 'porta', 'serial', 'com1', 'nfe', 'pdv', 'impressora'];
+    const tagsDetectadas = [];
+    const textLower = text.toLowerCase();
+    dicionarioTags.forEach(tag => {
+      if (textLower.includes(tag)) {
+        tagsDetectadas.push(tag);
+      }
+    });
+
+    // Heurística 4: Sintoma / Descrição (primeiro parágrafo de texto corrido)
+    const paragraphs = text.split('\n\n').map(p => p.trim()).filter(p => p.length > 0);
+    let description = '';
+    if (paragraphs.length > 0) {
+      let candidate = paragraphs[0];
+      // Se o primeiro parágrafo era só o título em negrito, pega o segundo
+      if (candidate.startsWith('**') && candidate.endsWith('**') && paragraphs.length > 1) {
+        candidate = paragraphs[1];
+      }
+      description = candidate.replace(/[#*_-]/g, "").trim();
+    }
+    if (description.length > 180) description = description.substring(0, 180) + '...';
+
+    // Heurística 5: Resolução (conteúdo que tem cara de passos ou código)
+    let solution = '';
+    const lines = text.split('\n');
+    const solutionLines = [];
+    let foundStart = false;
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.includes('```') || /^\d+\.\s/.test(trimmed) || trimmed.startsWith('-') || trimmed.startsWith('* ')) {
+        foundStart = true;
+      }
+      if (foundStart) {
+        solutionLines.push(line);
       }
     }
-    this.formCategory.value = category;
 
-    // Fecha o modal e avisa o usuário
-    this.discordImportOverlay.classList.add('hidden');
-    this.btnDeleteArticle.classList.add('hidden');
-    this.btnSaveArticle.innerHTML = 'Cadastrar Novo Artigo';
+    if (solutionLines.length > 0) {
+      solution = solutionLines.join('\n');
+    } else {
+      // Se não achou marcadores, junta do parágrafo 2 em diante
+      if (paragraphs.length > 1) {
+        solution = paragraphs.slice(1).join('\n\n');
+      } else {
+        solution = text;
+      }
+    }
 
-    window.showToast("Instrução convertida! Revise e clique em Salvar.", "success");
+    // Se houver imagens locais baixadas offline-first, anexa referências locais do protocolo local-image
+    if (item.localImages && item.localImages.length > 0) {
+      solution += '\n\n### Imagens de Referência:\n';
+      item.localImages.forEach(imgName => {
+        solution += `\n![Anexo](local-image://${imgName})\n`;
+      });
+    }
+
+    return {
+      title,
+      category,
+      tags: tagsDetectadas,
+      description,
+      solution
+    };
+  }
+
+  handleCurationDiscard() {
+    // Apenas avança na fila sem salvar o item atual
+    this.loadCurationItem(this.currentCurationIndex + 1);
+  }
+
+  handleCurationDraft() {
+    this.saveCurationItem('Rascunho');
+  }
+
+  handleCurationPublish() {
+    this.saveCurationItem('Publicado');
+  }
+
+  saveCurationItem(status) {
+    const item = this.curationQueue[this.currentCurationIndex];
+    
+    const article = {
+      title: this.curationTitle.value.trim(),
+      category: this.curationCategory.value,
+      tags: this.curationTags.value,
+      description: this.curationDescription.value.trim(),
+      solution: this.curationSolution.value.trim(),
+      discordMessageId: item.messageId,
+      status: status
+    };
+
+    if (!article.title) {
+      window.showToast('O título do artigo é obrigatório.', 'warning');
+      return;
+    }
+
+    window.storageService.addKnowledge(article);
+    window.showToast(status === 'Publicado' ? 'Artigo publicado com sucesso!' : 'Salvo como rascunho!', 'success');
+
+    // Avança na fila
+    this.loadCurationItem(this.currentCurationIndex + 1);
+  }
+
+  finishCurationWizard() {
+    this.discordCurationWizard.classList.add('hidden');
+    window.showToast('Curadoria concluída!', 'success');
+    
+    // Atualiza listas do painel admin
+    this.renderArticlesList();
+    this.resetFormForNew();
+  }
+
+  // Método de segurança para salvar itens restantes se fechar o modal no meio do wizard
+  forceDraftRemainingCurationItems() {
+    if (!this.curationQueue || this.currentCurationIndex >= this.curationQueue.length) return;
+
+    const remainingCount = this.curationQueue.length - this.currentCurationIndex;
+    
+    for (let i = this.currentCurationIndex; i < this.curationQueue.length; i++) {
+      const item = this.curationQueue[i];
+      const converted = this.runCurationHeuristics(item);
+      
+      const article = {
+        title: converted.title || `Importado do Discord (${item.messageId})`,
+        category: converted.category,
+        tags: converted.tags.join(', '),
+        description: converted.description,
+        solution: converted.solution,
+        discordMessageId: item.messageId,
+        status: 'Rascunho'
+      };
+
+      window.storageService.addKnowledge(article);
+    }
+
+    window.showToast(`${remainingCount} itens restantes salvos automaticamente como rascunhos!`, 'warning');
+    this.curationQueue = [];
+    this.renderArticlesList();
   }
 
   // --- GERENCIAMENTO DE CATEGORIAS DINÂMICAS ---
@@ -1289,6 +1856,16 @@ class AdminController {
   // --- GERENCIAMENTO DE CONFIGURAÇÕES DO PORTAL ---
   loadSettingsInPanel() {
     const settings = window.storageService.getSettings();
+    const currentUser = window.storageService.getCurrentUser();
+    
+    const discordSection = document.getElementById('settings-discord-section');
+    if (discordSection) {
+      if (currentUser && currentUser.role === 'ADM') {
+        discordSection.style.display = 'block';
+      } else {
+        discordSection.style.display = 'none';
+      }
+    }
     
     if (this.settingsThemeSelect) {
       this.settingsThemeSelect.value = settings.theme || 'red';
@@ -1299,6 +1876,54 @@ class AdminController {
     if (this.settingsAutoScrollCheckbox) {
       this.settingsAutoScrollCheckbox.checked = settings.autoScroll !== false;
     }
+    
+    // Carrega campos de sincronização
+    if (this.settingsSyncUrl) {
+      this.settingsSyncUrl.value = settings.syncUrl || '';
+    }
+    if (this.settingsSyncToken) {
+      this.settingsSyncToken.value = settings.syncToken || '';
+    }
+    
+    // Carrega campos do Discord
+    if (this.settingsDiscordGuild) {
+      this.settingsDiscordGuild.value = settings.discordGuildId || '';
+    }
+    if (this.settingsDiscordToken) {
+      const encryptedToken = settings.discordBotToken || '';
+      if (encryptedToken && window.api && typeof window.api.decryptString === 'function') {
+        window.api.decryptString(encryptedToken).then(decrypted => {
+          this.settingsDiscordToken.value = decrypted || '';
+        }).catch(err => {
+          console.error("Erro ao decifrar token do Discord:", err);
+          this.settingsDiscordToken.value = encryptedToken;
+        });
+      } else {
+        this.settingsDiscordToken.value = encryptedToken;
+      }
+    }
+    
+    this.updateSyncStatusDisplay(settings);
+  }
+
+  async saveDiscordSettings() {
+    const settings = window.storageService.getSettings();
+    const rawToken = this.settingsDiscordToken.value.trim();
+    settings.discordGuildId = this.settingsDiscordGuild.value.trim();
+    
+    if (rawToken) {
+      if (window.api && typeof window.api.encryptString === 'function') {
+        const encrypted = await window.api.encryptString(rawToken);
+        settings.discordBotToken = encrypted;
+      } else {
+        settings.discordBotToken = rawToken;
+      }
+    } else {
+      settings.discordBotToken = '';
+    }
+    
+    window.storageService.saveSettings(settings);
+    window.showToast('Configurações do Discord salvas!', 'success');
   }
 
   saveSettingsTheme() {
@@ -1345,6 +1970,64 @@ class AdminController {
         this.resetFormForNew();
         this.loadReports();
       }
+    }
+  }
+
+  saveSyncSettings() {
+    const settings = window.storageService.getSettings();
+    settings.syncUrl = this.settingsSyncUrl.value.trim();
+    settings.syncToken = this.settingsSyncToken.value.trim();
+    window.storageService.saveSettings(settings);
+    window.showToast('Configurações de sincronização salvas!', 'success');
+  }
+
+  updateSyncStatusDisplay(settings) {
+    if (!this.syncStatusText) return;
+    if (!settings.lastSync) {
+      this.syncStatusText.textContent = 'Nunca Sincronizado';
+      this.syncStatusText.style.color = 'var(--text-secondary)';
+      return;
+    }
+    const dateFormatted = this._formatDate(settings.lastSync);
+    if (settings.lastSyncStatus === 'SUCCESS') {
+      this.syncStatusText.textContent = `Sucesso em ${dateFormatted}`;
+      this.syncStatusText.style.color = '#00cc66'; // Verde
+    } else {
+      this.syncStatusText.textContent = `Falha em ${dateFormatted}`;
+      this.syncStatusText.style.color = '#ff3333'; // Vermelho
+    }
+  }
+
+  async handleCloudSync() {
+    const url = this.settingsSyncUrl.value.trim();
+    const token = this.settingsSyncToken.value.trim();
+    
+    if (!url) {
+      window.showToast('Por favor, informe a URL do endpoint de sincronização.', 'warning');
+      return;
+    }
+    
+    this.btnCloudSync.disabled = true;
+    const originalContent = this.btnCloudSync.innerHTML;
+    this.btnCloudSync.innerHTML = 'Sincronizando...';
+    
+    try {
+      const result = await window.storageService.syncDatabaseAsync(url, token);
+      if (result.success) {
+        if (result.mock) {
+          window.showToast('Sincronização concluída (Modo Simulação)! Artigo baixado da nuvem.', 'success');
+        } else {
+          window.showToast('Sincronização com a nuvem realizada com sucesso!', 'success');
+        }
+        this.renderArticlesList();
+      }
+    } catch (e) {
+      window.showToast(`Falha na sincronização: ${e.message}`, 'error');
+    } finally {
+      this.btnCloudSync.disabled = false;
+      this.btnCloudSync.innerHTML = originalContent;
+      const settings = window.storageService.getSettings();
+      this.updateSyncStatusDisplay(settings);
     }
   }
 }

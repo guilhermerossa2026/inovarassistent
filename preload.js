@@ -37,6 +37,27 @@ contextBridge.exposeInMainWorld('api', {
       return false;
     }
   },
+  readDatabaseFileAsync: (filename) => {
+    return ipcRenderer.invoke('read-db-file-async', filename);
+  },
+  writeDatabaseFileAsync: (filename, content) => {
+    return ipcRenderer.invoke('write-db-file-async', filename, content);
+  },
+  encryptString: (plainText) => {
+    return ipcRenderer.invoke('encrypt-string', plainText);
+  },
+  decryptString: (cipherTextBase64) => {
+    return ipcRenderer.invoke('decrypt-string', cipherTextBase64);
+  },
+  fetchDiscordChannels: (guildId, botToken) => {
+    return ipcRenderer.invoke('fetch-discord-channels', guildId, botToken);
+  },
+  fetchDiscordMessages: (channelId, botToken) => {
+    return ipcRenderer.invoke('fetch-discord-messages', channelId, botToken);
+  },
+  downloadDiscordImage: (url, botToken) => {
+    return ipcRenderer.invoke('download-discord-image', url, botToken);
+  },
   hashPassword: (password) => {
     if (typeof password !== 'string') return '';
     return crypto.createHash('sha256').update(password).digest('hex');

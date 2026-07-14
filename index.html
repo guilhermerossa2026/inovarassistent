@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inovar Assistente - Assistente Inteligente de Suporte</title>
   <meta name="description" content="Base de conhecimento inteligente e centralizadora para suporte técnico do Sistema Inovar.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: local-image:; connect-src 'self' *;">
 
   <!-- Estilos Modulares -->
   <link rel="stylesheet" href="css/variables.css">
@@ -465,6 +466,55 @@
                   </form>
                 </div>
 
+                <!-- SEÇÃO 3: SINCRONIZAÇÃO EM NUVEM -->
+                <div style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1.5rem;">
+                  <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; color: var(--inovar-red); text-align: left;">Sincronização em Nuvem (Cloud Sync)</h3>
+                  <form onsubmit="event.preventDefault();" style="text-align: left;">
+                    <div class="form-grid-2">
+                      <div class="form-group">
+                        <label for="settings-sync-url" class="form-label">Endpoint de Sincronização (URL)</label>
+                        <input type="text" id="settings-sync-url" class="form-input" placeholder="https://api.inovar.com/sync" autocomplete="off">
+                      </div>
+                      <div class="form-group">
+                        <label for="settings-sync-token" class="form-label">Token de Autenticação do Técnico</label>
+                        <input type="password" id="settings-sync-token" class="form-input" placeholder="Token de acesso..." autocomplete="off">
+                      </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                      <div id="sync-status-indicator" style="font-size: 0.8rem; color: var(--text-secondary);">
+                        Status: <span id="sync-status-text" style="font-weight: 600; color: var(--text-secondary);">Nunca Sincronizado</span>
+                      </div>
+                      
+                      <button type="button" id="btn-cloud-sync" class="btn-primary" style="width: auto; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.5-2.2-2.4-3.8-4.7-3.8H16c-.9-2.2-3.1-3.6-5.5-3.6-3 0-5.6 2.1-6.1 5C2.1 9 1 10.6 1 12.5c0 2.5 2 4.5 4.5 4.5h14.3c1.7 0 3.2-1.4 3.2-3 0-.7-.3-1.4-.8-2z"/>
+                          <polyline points="12 12 12 8 12 12"/>
+                          <polyline points="9 11 12 8 15 11"/>
+                        </svg>
+                        Sincronizar com Nuvem
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                <!-- SEÇÃO 4: CONFIGURAÇÕES DISCORD -->
+                <div id="settings-discord-section" style="border-top: 1px solid var(--border-color); padding-top: 1.5rem; margin-top: 1.5rem;">
+                  <h3 style="font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; color: var(--inovar-red); text-align: left;">Integração com Discord</h3>
+                  <form onsubmit="event.preventDefault();" style="text-align: left;">
+                    <div class="form-grid-2">
+                      <div class="form-group">
+                        <label for="settings-discord-token" class="form-label">Token do Bot do Discord</label>
+                        <input type="password" id="settings-discord-token" class="form-input" placeholder="Insira o Token do Bot..." autocomplete="off">
+                      </div>
+                      <div class="form-group">
+                        <label for="settings-discord-guild" class="form-label">ID do Servidor Discord (Guild ID)</label>
+                        <input type="text" id="settings-discord-guild" class="form-input" placeholder="Ex: 123456789012345678..." autocomplete="off">
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
               </main>
             </div>
           </div>
@@ -528,29 +578,106 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: CONVERSOR DE INSTRUÇÕES ================= -->
+  <!-- ================= MODAL: EXPLORADOR DO DISCORD (3 COLUNAS) ================= -->
   <div id="discord-import-overlay" class="discord-import-overlay hidden">
-    <div class="discord-import-card">
+    <div class="discord-import-card discord-wide">
       <h3 class="admin-modal-title" style="text-align: left; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: #5865F2;">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
         </svg>
-        Converter Instruções
+        Explorador de Conteúdo do Discord
       </h3>
-      <p class="admin-modal-desc" style="text-align: left; margin-bottom: 1.25rem;">Cole o texto ou a postagem copiada abaixo. Nós analisaremos o texto, extrairemos o título, as tags prováveis e a solução estruturada.</p>
+      <p class="admin-modal-desc" style="text-align: left; margin-bottom: 0.5rem;">Navegue pelos canais do seu servidor, visualize as postagens e selecione os conhecimentos que deseja importar.</p>
 
-      <div class="form-group">
-        <textarea id="discord-paste-area" class="form-input discord-textarea" placeholder="Cole aqui o texto da postagem do Discord... (ex: **Erro de Timeout NF-e**...)"></textarea>
-        <div class="discord-help-text">
-          Dica: O conversor detecta títulos em negrito como **Título** e trechos de comandos ou queries envoltos em blocos de código (\`\`\`código\`\`\`).
+      <div class="discord-import-layout">
+        <!-- Coluna 1: Canais e Categorias -->
+        <div class="discord-sidebar-channels" id="discord-channels-tree">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 2rem;">Carregando canais...</div>
+        </div>
+
+        <!-- Coluna 2: Mensagens -->
+        <div class="discord-messages-list">
+          <div class="discord-messages-header">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Mensagens</span>
+            <div style="display: flex; align-items: center; gap: 0.3rem;">
+              <input type="checkbox" id="discord-hide-imported" style="width: auto; cursor: pointer;" checked>
+              <label for="discord-hide-imported" style="font-size: 0.7rem; cursor: pointer; color: var(--text-secondary); user-select: none;">Ocultar importados</label>
+            </div>
+          </div>
+          <div id="discord-msg-container" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 2rem;">Selecione um canal</div>
+          </div>
+        </div>
+
+        <!-- Coluna 3: Preview -->
+        <div class="discord-preview-panel" id="discord-msg-preview-panel">
+          <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding-top: 4rem;">Selecione uma mensagem para visualizar</div>
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button id="btn-cancel-discord" class="btn-secondary">Descartar</button>
-        <button id="btn-process-discord" class="btn-primary" style="background-color: #5865F2; box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);">
-          Analisar e Preencher
+      <div class="modal-actions" style="margin-top: 0;">
+        <button id="btn-cancel-discord" class="btn-secondary" style="flex: 0 0 150px;">Descartar</button>
+        <button id="btn-import-bulk-discord" class="btn-primary" style="background-color: #5865F2; box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);" disabled>
+          Importar Selecionados como Rascunho
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: WIZARD DE CURADORIA (2 COLUNAS) ================= -->
+  <div id="discord-curation-wizard" class="curation-wizard-overlay hidden">
+    <div class="curation-wizard-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <h3 class="admin-modal-title" style="text-align: left; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--color-success);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          Assistente de Curadoria
+        </h3>
+        <span id="curation-queue-indicator" style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); background-color: var(--border-color); padding: 0.2rem 0.6rem; border-radius: 20px;">Item 1 de 1</span>
+      </div>
+      <p class="admin-modal-desc" style="text-align: left; margin-bottom: 0.5rem;">Revise e ajuste as informações sugeridas pelo motor de conversão antes de salvar.</p>
+
+      <div class="curation-wizard-layout">
+        <!-- Coluna Esquerda: Mensagem Original -->
+        <div class="curation-left-preview" id="curation-msg-original">
+          <!-- Carregado via JS -->
+        </div>
+
+        <!-- Coluna Direita: Campos Editáveis -->
+        <div class="curation-right-form">
+          <div class="form-group">
+            <label for="curation-title" class="form-label">Título da Instrução</label>
+            <input type="text" id="curation-title" class="form-input" placeholder="Título descritivo..." autocomplete="off">
+          </div>
+          <div class="form-grid-2" style="margin-top: 0.5rem;">
+            <div class="form-group">
+              <label for="curation-category" class="form-label">Categoria</label>
+              <select id="curation-category" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label for="curation-tags" class="form-label">Tags (Separadas por vírgula)</label>
+              <input type="text" id="curation-tags" class="form-input" placeholder="tags, exemplo, erro..." autocomplete="off">
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 0.5rem; display: flex; flex-direction: column; flex: 1; min-height: 0;">
+            <label for="curation-description" class="form-label">Sintoma / Descrição</label>
+            <textarea id="curation-description" class="form-input" style="flex: 1; min-height: 80px; resize: vertical;" placeholder="Descrição do problema..."></textarea>
+          </div>
+          <div class="form-group" style="margin-top: 0.5rem; display: flex; flex-direction: column; flex: 2; min-height: 0;">
+            <label for="curation-solution" class="form-label">Resolução (Passo a Passo em Markdown)</label>
+            <textarea id="curation-solution" class="form-input" style="flex: 1; min-height: 140px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; resize: vertical;" placeholder="Etapas para solucionar..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 0; display: flex; gap: 0.6rem;">
+        <button id="btn-curation-discard" class="btn-danger" style="flex: 0 0 150px; background-color: var(--color-danger); border-color: var(--color-danger);">Descartar / Pular</button>
+        <div style="flex: 1; display: flex; gap: 0.6rem;">
+          <button id="btn-curation-draft" class="btn-secondary">Salvar como Rascunho</button>
+          <button id="btn-curation-publish" class="btn-primary">Publicar Artigo</button>
+        </div>
       </div>
     </div>
   </div>

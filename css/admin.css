@@ -676,3 +676,298 @@
   margin-top: 0.4rem;
   line-height: 1.4;
 }
+
+/* --- ESTILOS ADICIONAIS: IMPORTADOR DE DISCORD EM 3 COLUNAS --- */
+.discord-import-card.discord-wide {
+  max-width: 1150px;
+  width: 95%;
+  height: 85%;
+  max-height: 720px;
+  display: flex;
+  flex-direction: column;
+}
+
+.discord-import-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin: 1rem 0;
+}
+
+.discord-sidebar-channels {
+  width: 240px;
+  min-width: 200px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 0.8rem;
+  background-color: rgba(0, 0, 0, 0.15);
+  text-align: left;
+}
+
+.discord-category-group {
+  margin-bottom: 1rem;
+}
+
+.discord-category-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem;
+}
+
+.discord-channel-item {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: var(--transition-fast);
+}
+
+.discord-channel-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.discord-channel-item.active {
+  background-color: var(--inovar-red-glow);
+  color: var(--inovar-red);
+  font-weight: 600;
+  border-left: 2px solid var(--inovar-red);
+}
+
+.discord-messages-list {
+  width: 380px;
+  min-width: 320px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.discord-messages-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.5rem;
+}
+
+.discord-msg-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.65rem;
+  background-color: rgba(255, 255, 255, 0.01);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  position: relative;
+}
+
+.discord-msg-card:hover {
+  border-color: var(--text-muted);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.discord-msg-card.active {
+  border-color: var(--inovar-red);
+  background-color: rgba(230, 0, 0, 0.03);
+}
+
+.discord-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.discord-msg-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.discord-msg-author {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.discord-msg-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.discord-msg-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 0.15rem;
+}
+
+.discord-preview-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-width: 350px;
+  text-align: left;
+}
+
+.discord-preview-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.6rem;
+}
+
+.discord-preview-body {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.discord-preview-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+.discord-preview-img {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  object-fit: contain;
+}
+
+/* WIZARD DE CURADORIA */
+.curation-wizard-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(8, 8, 10, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn var(--transition-fast);
+}
+
+.curation-wizard-card {
+  width: 95%;
+  max-width: 1200px;
+  height: 90%;
+  max-height: 750px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-main);
+  animation: scaleIn var(--transition-fast);
+}
+
+.curation-wizard-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  margin: 1rem 0;
+}
+
+.curation-left-preview {
+  width: 40%;
+  min-width: 320px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.curation-right-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.curation-right-form .form-group {
+  margin-bottom: 0rem;
+}
+
+/* Badges e Status */
+.badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background-color: rgba(0, 204, 102, 0.12);
+  color: var(--color-success);
+  border: 1px solid rgba(0, 204, 102, 0.25);
+}
+
+.badge-draft {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Skeleton Loaders */
+.skeleton-box {
+  background: linear-gradient(90deg, var(--bg-input) 25%, var(--border-color) 50%, var(--bg-input) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 6px;
+  width: 100%;
+}

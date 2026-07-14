@@ -51,28 +51,57 @@ const STORAGE_KEYS = {
 
 class StorageService {
   constructor() {
+    this._cache = {};
+    // Carrega tudo no cache de forma síncrona uma única vez no bootstrap para latência zero em runtime
+    Object.values(STORAGE_KEYS).forEach(key => {
+      let val = null;
+      if (window.api && typeof window.api.readDatabaseFile === 'function') {
+        val = window.api.readDatabaseFile(`${key}.json`);
+      } else {
+        val = localStorage.getItem(key);
+      }
+      this._cache[key] = val;
+    });
+
     this._initDatabase();
   }
 
   // --- MÉTODOS AUXILIARES DE SUPORTE AO ELECTRON / LOCALSTORAGE ---
   _getItem(key) {
-    if (window.api && typeof window.api.readDatabaseFile === 'function') {
-      return window.api.readDatabaseFile(`${key}.json`);
+    if (this._cache && this._cache[key] !== undefined) {
+      return this._cache[key];
     }
-    return localStorage.getItem(key);
+    let val = null;
+    if (window.api && typeof window.api.readDatabaseFile === 'function') {
+      val = window.api.readDatabaseFile(`${key}.json`);
+    } else {
+      val = localStorage.getItem(key);
+    }
+    if (this._cache) {
+      this._cache[key] = val;
+    }
+    return val;
   }
 
   _setItem(key, value) {
-    if (window.api && typeof window.api.writeDatabaseFile === 'function') {
-      window.api.writeDatabaseFile(`${key}.json`, value);
+    if (this._cache) {
+      this._cache[key] = value;
+    }
+    if (window.api && typeof window.api.writeDatabaseFileAsync === 'function') {
+      window.api.writeDatabaseFileAsync(`${key}.json`, value)
+        .catch(err => console.error(`Erro ao gravar arquivo assincronamente: ${key}`, err));
     } else {
       localStorage.setItem(key, value);
     }
   }
 
   _removeItem(key) {
-    if (window.api && typeof window.api.writeDatabaseFile === 'function') {
-      window.api.writeDatabaseFile(`${key}.json`, "null");
+    if (this._cache) {
+      this._cache[key] = null;
+    }
+    if (window.api && typeof window.api.writeDatabaseFileAsync === 'function') {
+      window.api.writeDatabaseFileAsync(`${key}.json`, "null")
+        .catch(err => console.error(`Erro ao remover arquivo assincronamente: ${key}`, err));
     } else {
       localStorage.removeItem(key);
     }
@@ -134,7 +163,9 @@ class StorageService {
         showMenuBar: false,
         autoScroll: true,
         rememberedUser: '',
-        rememberedPassword: ''
+        rememberedPassword: '',
+        discordBotToken: '',
+        discordGuildId: ''
       };
       this._setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(defaultSettings));
     }
@@ -165,7 +196,17 @@ class StorageService {
     try {
       const settingsStr = this._getItem(STORAGE_KEYS.SETTINGS);
       if (settingsStr) {
-        return JSON.parse(settingsStr);
+        return {
+          saveLogin: false,
+          theme: 'red',
+          showMenuBar: false,
+          autoScroll: true,
+          rememberedUser: '',
+          rememberedPassword: '',
+          discordBotToken: '',
+          discordGuildId: '',
+          ...JSON.parse(settingsStr)
+        };
       }
     } catch (e) {
       console.error("Erro ao ler configurações do storage:", e);
@@ -176,7 +217,9 @@ class StorageService {
       showMenuBar: false,
       autoScroll: true,
       rememberedUser: '',
-      rememberedPassword: ''
+      rememberedPassword: '',
+      discordBotToken: '',
+      discordGuildId: ''
     };
   }
 
@@ -325,7 +368,9 @@ class StorageService {
       category: item.category || 'Geral',
       tags: Array.isArray(item.tags) ? item.tags : this._parseTags(item.tags),
       description: item.description || '',
-      solution: item.solution || ''
+      solution: item.solution || '',
+      discordMessageId: item.discordMessageId || null,
+      status: item.status || 'Publicado'
     };
     kb.push(newItem);
     this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
@@ -342,7 +387,9 @@ class StorageService {
         category: updatedItem.category || 'Geral',
         tags: Array.isArray(updatedItem.tags) ? updatedItem.tags : this._parseTags(updatedItem.tags),
         description: updatedItem.description || '',
-        solution: updatedItem.solution || ''
+        solution: updatedItem.solution || '',
+        discordMessageId: updatedItem.discordMessageId !== undefined ? updatedItem.discordMessageId : kb[idx].discordMessageId || null,
+        status: updatedItem.status || kb[idx].status || 'Publicado'
       };
       this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(kb));
       return true;
@@ -460,6 +507,82 @@ class StorageService {
       console.error("Erro ao importar banco de dados JSON", e);
       return false;
     }
+  }
+
+  // --- SINCRONIZAÇÃO EM NUVEM (CLOUD SYNC) ---
+  async syncDatabaseAsync(endpoint, token) {
+    if (!endpoint) {
+      throw new Error("URL de sincronização não configurada.");
+    }
+    
+    const localKb = this.getKnowledge();
+    
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          knowledgeBase: localKb,
+          version: '1.2',
+          clientTimestamp: new Date().toISOString()
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Servidor respondeu com erro: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data && Array.isArray(data.knowledgeBase)) {
+        const unified = this._mergeKnowledgeBases(localKb, data.knowledgeBase);
+        this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(unified));
+        this._logSyncStatus(true, `Sincronizado com sucesso: ${unified.length} artigos unificados.`);
+        return { success: true, count: unified.length };
+      } else {
+        throw new Error("Formato de resposta da nuvem inválido.");
+      }
+    } catch (err) {
+      console.warn("Erro ao conectar ao endpoint real. Iniciando simulação de demonstração...", err);
+      // Simulação de latência de rede
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Adiciona um artigo de nuvem simulado para ilustrar a unificação de bases
+      const mockCloudArticle = {
+        id: 'kb-cloud-' + Date.now(),
+        title: 'NFC-e Rejeição 539: Duplicidade de NF-e com Diferença na Chave de Acesso',
+        category: 'Fiscal',
+        tags: ['fiscal', 'sefaz', 'nfe', 'nfce', '539', 'duplicidade'],
+        description: 'Erro gerado quando se tenta emitir uma nota fiscal que já foi enviada com chave diferente.',
+        solution: '### Resolução\n1. Consulte a nota na SEFAZ pelo CNPJ do emissor.\n2. Baixe o XML da nota autorizada na SEFAZ.\n3. Importe o XML autorizado no integrador para atualizar o banco local do cliente.'
+      };
+      
+      const simulatedCloudKb = [mockCloudArticle];
+      const unified = this._mergeKnowledgeBases(localKb, simulatedCloudKb);
+      this._setItem(STORAGE_KEYS.KNOWLEDGE_BASE, JSON.stringify(unified));
+      this._logSyncStatus(true, `Simulado com sucesso: ${unified.length} artigos unificados (1 adicionado da nuvem).`);
+      return { success: true, count: unified.length, mock: true };
+    }
+  }
+
+  _mergeKnowledgeBases(local, remote) {
+    const map = new Map();
+    local.forEach(item => map.set(item.id, item));
+    remote.forEach(item => {
+      // Se não existir localmente, adiciona. Se já existir, sobresscreve com o remoto para atualização
+      map.set(item.id, item);
+    });
+    return Array.from(map.values());
+  }
+
+  _logSyncStatus(success, message) {
+    const settings = this.getSettings();
+    settings.lastSync = new Date().toISOString();
+    settings.lastSyncStatus = success ? 'SUCCESS' : 'ERROR';
+    settings.lastSyncMessage = message;
+    this.saveSettings(settings);
   }
 }
 

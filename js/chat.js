@@ -3,6 +3,24 @@
 // Lista de palavras comuns para descartar na busca técnico-textual
 const STOPWORDS = new Set(['de', 'a', 'o', 'que', 'e', 'do', 'da', 'em', 'um', 'para', 'com', 'na', 'no', 'os', 'as']);
 
+// Dicionário de Sinônimos Técnicos do Sistema Inovar para Busca Semântica
+const DICIONARIO_SINONIMOS = {
+  'impressora': ['spooler', 'cupom', 'impressao', 'termica', 'usb001', 'elgin', 'bematech', 'comunicacao'],
+  'impressao': ['impressora', 'spooler', 'cupom', 'termica', 'usb001', 'elgin', 'bematech'],
+  'spooler': ['impressora', 'impressao', 'cupom', 'fila', 'trava', 'bloqueado'],
+  'balanca': ['peso', 'serial', 'filizola', 'toledo', 'baudrate', 'com', 'porta', 'platina'],
+  'peso': ['balanca', 'serial', 'filizola', 'toledo', 'zero', 'leitura'],
+  'filizola': ['balanca', 'peso', 'serial', 'toledo', 'platina'],
+  'toledo': ['balanca', 'peso', 'serial', 'filizola', 'prix'],
+  'sefaz': ['nfe', 'nfce', 'xml', 'rejeicao', 'timeout', 'transmitir', 'certificado', 'instabilidade'],
+  'nfe': ['sefaz', 'nfce', 'xml', 'rejeicao', 'timeout', 'transmitir', 'certificado'],
+  'nfce': ['sefaz', 'nfe', 'xml', 'rejeicao', 'timeout', 'transmitir', 'certificado'],
+  'timeout': ['sefaz', 'nfe', 'nfce', 'lentidao', 'conexao', 'resposta'],
+  'deadlock': ['banco', 'sql', 'lock', 'bloqueio', 'travamento', 'spid', 'processo'],
+  'banco': ['deadlock', 'sql', 'lock', 'bloqueio', 'travamento', 'database', 'sqlite', 'server'],
+  'sql': ['deadlock', 'banco', 'lock', 'bloqueio', 'travamento', 'database', 'query', 'server']
+};
+
 function pesquisarNaBase(query) {
   if (!query || query.trim() === "") return [];
 
@@ -27,6 +45,21 @@ function pesquisarNaBase(query) {
 
   if (termosParaPesquisa.length === 0) return [];
 
+  // Expansão de Sinônimos
+  const originalTermsSet = new Set(termosParaPesquisa);
+  const sinonimosUsados = new Set();
+  
+  termosParaPesquisa.forEach(termo => {
+    if (DICIONARIO_SINONIMOS[termo]) {
+      DICIONARIO_SINONIMOS[termo].forEach(sinonimo => {
+        if (!originalTermsSet.has(sinonimo) && !sinonimosUsados.has(sinonimo)) {
+          sinonimosUsados.add(sinonimo);
+        }
+      });
+    }
+  });
+  
+  const todosTermosDeBusca = [...termosParaPesquisa, ...sinonimosUsados];
   const baseConhecimento = window.storageService.getKnowledge();
   const resultadosComScore = [];
 
@@ -42,25 +75,28 @@ function pesquisarNaBase(query) {
     const tituloLimpo = artigo.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const descricaoLimpa = (artigo.description || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    termosParaPesquisa.forEach(termo => {
+    todosTermosDeBusca.forEach(termo => {
+      const isOriginal = originalTermsSet.has(termo);
+      const multiplicador = isOriginal ? 1.0 : 0.5; // Sinônimos dão peso secundário (50%) para priorizar termos exatos
+
       // Regra 1: Se bater exato com uma TAG cadastrada (Peso Máximo)
       if (artigo.tags && artigo.tags.some(t => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === termo)) {
-        score += 10;
+        score += 10 * multiplicador;
       }
       
       // Regra 2: Se o termo bater com uma palavra inteira no TÍTULO
       const regexPalavraInteira = new RegExp(`\\b${termo}\\b`, 'i');
       if (regexPalavraInteira.test(tituloLimpo)) {
-        score += 5; // Palavra exata no título
+        score += 5 * multiplicador; // Palavra exata no título
       } else if (tituloLimpo.includes(termo) && termo.length > 3) {
-        score += 2; // Parcial se for uma palavra longa
+        score += 2 * multiplicador; // Parcial se for uma palavra longa
       }
 
       // Regra 3: Se o termo bater com uma palavra inteira na DESCRIÇÃO
       if (regexPalavraInteira.test(descricaoLimpa)) {
-        score += 2; // Palavra exata na descrição
+        score += 2 * multiplicador; // Palavra exata na descrição
       } else if (descricaoLimpa.includes(termo) && termo.length > 3) {
-        score += 1; // Parcial se for uma palavra longa
+        score += 1 * multiplicador; // Parcial se for uma palavra longa
       }
     });
 
@@ -86,8 +122,14 @@ class ChatController {
     
     this._initElements();
     this._bindEvents();
-    this.applySettingsAndTheme();
-    this.checkUserSession();
+    
+    // Inicialização assíncrona para descriptografar credenciais salvas sem travar
+    this.initializeController();
+  }
+
+  async initializeController() {
+    await this.applySettingsAndTheme();
+    await this.checkUserSession();
   }
 
   _initElements() {
@@ -164,7 +206,7 @@ class ChatController {
     });
   }
 
-  applySettingsAndTheme() {
+  async applySettingsAndTheme() {
     const settings = window.storageService.getSettings();
     
     // 1. Aplica o tema visual no body
@@ -179,16 +221,24 @@ class ChatController {
       window.api.setMenuBarVisibility(!!settings.showMenuBar);
     }
     
-    // 3. Preenche login se "Lembrar de mim" estiver ativo
+    // 3. Preenche login se "Lembrar de mim" estiver ativo (com decriptação assíncrona)
     if (settings.saveLogin) {
-      if (this.loginInput) this.loginInput.value = settings.rememberedUser || '';
-      if (this.loginPasswordInput) this.loginPasswordInput.value = settings.rememberedPassword || '';
+      let username = settings.rememberedUser || '';
+      let password = settings.rememberedPassword || '';
+      
+      if (window.api && typeof window.api.decryptString === 'function') {
+        if (settings.rememberedUser) username = await window.api.decryptString(settings.rememberedUser);
+        if (settings.rememberedPassword) password = await window.api.decryptString(settings.rememberedPassword);
+      }
+      
+      if (this.loginInput) this.loginInput.value = username;
+      if (this.loginPasswordInput) this.loginPasswordInput.value = password;
       if (this.loginSaveSession) this.loginSaveSession.checked = true;
     }
   }
 
   // --- FLUXO DE LOGIN / IDENTIFICAÇÃO ---
-  checkUserSession() {
+  async checkUserSession() {
     const savedUser = window.storageService.getCurrentUser();
     if (savedUser) {
       this.activeUser = savedUser;
@@ -218,8 +268,16 @@ class ChatController {
       // Ao reabrir, se "Lembrar" estiver ativo, os valores serão preenchidos
       const settings = window.storageService.getSettings();
       if (settings.saveLogin) {
-        this.loginInput.value = settings.rememberedUser || '';
-        if (this.loginPasswordInput) this.loginPasswordInput.value = settings.rememberedPassword || '';
+        let username = settings.rememberedUser || '';
+        let password = settings.rememberedPassword || '';
+        
+        if (window.api && typeof window.api.decryptString === 'function') {
+          if (settings.rememberedUser) username = await window.api.decryptString(settings.rememberedUser);
+          if (settings.rememberedPassword) password = await window.api.decryptString(settings.rememberedPassword);
+        }
+        
+        this.loginInput.value = username;
+        if (this.loginPasswordInput) this.loginPasswordInput.value = password;
         if (this.loginSaveSession) this.loginSaveSession.checked = true;
       } else {
         if (this.loginSaveSession) this.loginSaveSession.checked = false;
@@ -232,7 +290,7 @@ class ChatController {
     }
   }
 
-  handleLogin() {
+  async handleLogin() {
     const username = this.loginInput.value.trim();
     const password = this.loginPasswordInput ? this.loginPasswordInput.value.trim() : '';
     if (!username || !password) {
@@ -242,12 +300,20 @@ class ChatController {
     
     const user = window.storageService.validateLogin(username, password);
     if (user) {
-      // Grava preferências de Lembrar Login
+      // Grava preferências de Lembrar Login (com criptografia segura no OS)
       const settings = window.storageService.getSettings();
       if (this.loginSaveSession && this.loginSaveSession.checked) {
         settings.saveLogin = true;
-        settings.rememberedUser = username;
-        settings.rememberedPassword = password;
+        
+        let encUser = username;
+        let encPass = password;
+        if (window.api && typeof window.api.encryptString === 'function') {
+          encUser = await window.api.encryptString(username);
+          encPass = await window.api.encryptString(password);
+        }
+        
+        settings.rememberedUser = encUser;
+        settings.rememberedPassword = encPass;
       } else {
         settings.saveLogin = false;
         settings.rememberedUser = '';
@@ -255,7 +321,7 @@ class ChatController {
       }
       window.storageService.saveSettings(settings);
 
-      this.checkUserSession();
+      await this.checkUserSession();
       // Garante foco no chat após logar com sucesso
       setTimeout(() => {
         if (this.chatInput) this.chatInput.focus();

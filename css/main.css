@@ -225,12 +225,12 @@ body {
 
 .form-label {
   display: block;
-  font-size: 0.75rem; /* Reduzido de 0.8rem */
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--text-muted);
   margin-bottom: 0.4rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
 }
 
 .form-input {
@@ -238,10 +238,10 @@ body {
   background-color: var(--bg-input);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  padding: 0.6rem 0.85rem; /* Reduzido de 0.75rem 1rem */
-  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm); /* rounded-xl (12px) */
   font-family: inherit;
-  font-size: 0.9rem; /* Reduzido de 0.95rem */
+  font-size: 0.8rem;
   outline: none;
   transition: var(--transition-fast);
 }
@@ -256,17 +256,17 @@ body {
   background-color: var(--inovar-red);
   color: #ffffff;
   border: none;
-  padding: 0.7rem; /* Reduzido de 0.85rem */
-  border-radius: var(--radius-md);
-  font-size: 0.9rem; /* Reduzido de 0.95rem */
-  font-weight: 600;
+  padding: 0.75rem;
+  border-radius: var(--radius-md); /* rounded-2xl (16px) */
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
   transition: var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 10px rgba(230, 0, 0, 0.15);
+  box-shadow: 0 4px 10px var(--inovar-red-glow);
 }
 
 .btn-primary:hover {

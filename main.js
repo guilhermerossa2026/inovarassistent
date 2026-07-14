@@ -1,5 +1,13 @@
-const { app, BrowserWindow, Menu, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, safeStorage, protocol, net } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { pathToFileURL } = require('url');
+
+// Registrar protocolo local-image antes de carregar a janela
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'local-image', privileges: { bypassCSP: true, secure: true, supportFetchAPI: true } }
+]);
+
 
 // Canal IPC síncrono para obter o diretório de dados do usuário
 ipcMain.on('get-user-data-path', (event) => {
@@ -18,6 +26,149 @@ ipcMain.on('set-menu-bar-visibility', (event, visible) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) {
     win.setMenuBarVisibility(visible);
+  }
+});
+
+// Prevenção de Path Traversal
+function getSafePath(filename) {
+  const safeName = path.basename(filename);
+  return path.join(app.getPath('userData'), safeName);
+}
+
+// Canais IPC assíncronos de arquivos
+ipcMain.handle('read-db-file-async', async (event, filename) => {
+  try {
+    const filePath = getSafePath(filename);
+    if (!fs.existsSync(filePath)) return null;
+    return await fs.promises.readFile(filePath, 'utf8');
+  } catch (e) {
+    console.error(`Erro ao ler arquivo assincronamente: ${filename}`, e);
+    return null;
+  }
+});
+
+ipcMain.handle('write-db-file-async', async (event, filename, content) => {
+  try {
+    const filePath = getSafePath(filename);
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      await fs.promises.mkdir(dir, { recursive: true });
+    }
+    await fs.promises.writeFile(filePath, content, 'utf8');
+    return true;
+  } catch (e) {
+    console.error(`Erro ao gravar arquivo assincronamente: ${filename}`, e);
+    return false;
+  }
+});
+
+// Canais IPC de criptografia (safeStorage)
+ipcMain.handle('encrypt-string', async (event, plainText) => {
+  try {
+    if (!safeStorage || !safeStorage.isEncryptionAvailable()) {
+      console.warn("Criptografia safeStorage não disponível. Retornando texto plano.");
+      return plainText;
+    }
+    const encrypted = safeStorage.encryptString(plainText);
+    return encrypted.toString('base64');
+  } catch (e) {
+    console.error("Erro ao criptografar string:", e);
+    return plainText;
+  }
+});
+
+ipcMain.handle('decrypt-string', async (event, cipherTextBase64) => {
+  try {
+    if (!safeStorage || !safeStorage.isEncryptionAvailable()) {
+      return cipherTextBase64;
+    }
+    if (!/^[A-Za-z0-9+/=]+$/.test(cipherTextBase64)) {
+      return cipherTextBase64;
+    }
+    const buffer = Buffer.from(cipherTextBase64, 'base64');
+    return safeStorage.decryptString(buffer);
+  } catch (e) {
+    // Retorna o próprio texto em caso de falha de decriptação (ex: dados legados em texto puro)
+    return cipherTextBase64;
+  }
+});
+
+// Canais IPC adicionais para integração direta com o Discord
+ipcMain.handle('fetch-discord-channels', async (event, guildId, botToken) => {
+  try {
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+      headers: {
+        'Authorization': `Bot ${botToken}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Erro na API do Discord: Status ${response.status}`);
+    }
+    return await response.json();
+  } catch (e) {
+    console.error("Erro ao buscar canais do Discord:", e);
+    return { error: e.message };
+  }
+});
+
+ipcMain.handle('fetch-discord-messages', async (event, channelId, botToken) => {
+  try {
+    const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=20`, {
+      headers: {
+        'Authorization': `Bot ${botToken}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Erro na API do Discord: Status ${response.status}`);
+    }
+    return await response.json();
+  } catch (e) {
+    console.error("Erro ao buscar mensagens do Discord:", e);
+    return { error: e.message };
+  }
+});
+
+ipcMain.handle('download-discord-image', async (event, imageUrl, botToken) => {
+  try {
+    const response = await fetch(imageUrl, {
+      headers: botToken ? { 'Authorization': `Bot ${botToken}` } : {}
+    });
+    if (!response.ok) {
+      throw new Error(`Erro ao baixar imagem: Status ${response.status}`);
+    }
+    
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.startsWith('image/')) {
+      throw new Error("O link fornecido não é uma imagem válida.");
+    }
+
+    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+    if (contentLength > 10 * 1024 * 1024) { // Limite de 10MB
+      throw new Error("A imagem excede o limite máximo de 10MB.");
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    
+    // Extrai e sanitiza o nome do arquivo
+    let fileName = path.basename(new URL(imageUrl).pathname);
+    if (!fileName || fileName === '/') {
+      fileName = `image_${Date.now()}.png`;
+    } else {
+      fileName = `${Date.now()}_${fileName}`;
+    }
+    const safeName = path.basename(fileName);
+    
+    const importedImagesDir = path.join(app.getPath('userData'), 'imported_images');
+    if (!fs.existsSync(importedImagesDir)) {
+      fs.mkdirSync(importedImagesDir, { recursive: true });
+    }
+
+    const targetPath = path.join(importedImagesDir, safeName);
+    await fs.promises.writeFile(targetPath, buffer);
+    return { success: true, fileName: safeName };
+  } catch (e) {
+    console.error("Erro ao baixar imagem do Discord:", e);
+    return { success: false, error: e.message };
   }
 });
 
@@ -80,6 +231,24 @@ function createWindow() {
 
 // Inicializa a aplicação
 app.whenReady().then(() => {
+  // Inicializa o protocolo customizado local-image
+  protocol.handle('local-image', (request) => {
+    try {
+      const urlPath = decodeURIComponent(request.url.replace('local-image://', ''));
+      const safeName = path.basename(urlPath);
+      const filePath = path.join(app.getPath('userData'), 'imported_images', safeName);
+      return net.fetch(pathToFileURL(filePath).toString());
+    } catch (err) {
+      console.error('Erro no protocolo local-image:', err);
+    }
+  });
+
+  // Cria a pasta de imagens importadas se não existir
+  const importedImagesDir = path.join(app.getPath('userData'), 'imported_images');
+  if (!fs.existsSync(importedImagesDir)) {
+    fs.mkdirSync(importedImagesDir, { recursive: true });
+  }
+
   createWindow();
 
   app.on('activate', function () {
