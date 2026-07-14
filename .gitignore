@@ -10,6 +10,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.log
+css/*.bak
 
 # Dependencies and build outputs
 node_modules/
