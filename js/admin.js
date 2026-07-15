@@ -43,9 +43,8 @@ class AdminController {
     this.btnDeleteArticle = document.getElementById('btn-delete-article');
     this.btnNewArticle = document.getElementById('btn-new-article');
     
-    // Backup e Importação
-    this.btnExportDb = document.getElementById('btn-export-db');
-    this.fileImportDb = document.getElementById('file-import-db');
+    // Configurações do Discord
+    this.btnSaveDiscord = document.getElementById('btn-save-discord');
     
     // Importador Discord (3 Colunas)
     this.btnOpenDiscordImport = document.getElementById('btn-open-discord-import');
@@ -74,6 +73,7 @@ class AdminController {
     
     // Gerenciador de Categorias Dinâmicas
     this.btnManageCategories = document.getElementById('btn-manage-categories');
+    this.btnManageCategoriesCuration = document.getElementById('btn-manage-categories-curation');
     this.categoriesModalOverlay = document.getElementById('categories-modal-overlay');
     this.categoriesListContainer = document.getElementById('categories-list-container');
     this.newCategoryInput = document.getElementById('new-category-input');
@@ -135,21 +135,22 @@ class AdminController {
     this.articleForm.addEventListener('submit', (e) => this.saveArticle(e));
     this.btnDeleteArticle.addEventListener('click', () => this.deleteArticle());
 
-    // Importações e Backups
-    this.btnExportDb.addEventListener('click', () => this.exportDatabase());
-    this.fileImportDb.addEventListener('change', (e) => this.importDatabase(e));
-
     // Importador do Discord (3 Colunas)
-    this.btnOpenDiscordImport.addEventListener('click', () => this.openDiscordModal(true));
-    this.btnCancelDiscord.addEventListener('click', () => this.openDiscordModal(false));
-    this.discordHideImported.addEventListener('change', () => this.renderDiscordMessages());
-    this.btnImportBulkDiscord.addEventListener('click', () => this.startCurationWizard());
-    
-    if (this.settingsDiscordToken) {
-      this.settingsDiscordToken.addEventListener('change', () => this.saveDiscordSettings());
+    if (this.btnOpenDiscordImport) {
+      this.btnOpenDiscordImport.addEventListener('click', () => this.openDiscordModal(true));
     }
-    if (this.settingsDiscordGuild) {
-      this.settingsDiscordGuild.addEventListener('change', () => this.saveDiscordSettings());
+    if (this.btnCancelDiscord) {
+      this.btnCancelDiscord.addEventListener('click', () => this.openDiscordModal(false));
+    }
+    if (this.discordHideImported) {
+      this.discordHideImported.addEventListener('change', () => this.renderDiscordMessages());
+    }
+    if (this.btnImportBulkDiscord) {
+      this.btnImportBulkDiscord.addEventListener('click', () => this.startCurationWizard());
+    }
+    
+    if (this.btnSaveDiscord) {
+      this.btnSaveDiscord.addEventListener('click', () => this.saveDiscordSettings());
     }
 
     // Assistente de Curadoria (Wizard)
@@ -159,6 +160,9 @@ class AdminController {
     
     // Gerenciador de Categorias
     this.btnManageCategories.addEventListener('click', () => this.openCategoriesModal(true));
+    if (this.btnManageCategoriesCuration) {
+      this.btnManageCategoriesCuration.addEventListener('click', () => this.openCategoriesModal(true));
+    }
     this.btnCloseCategoriesModal.addEventListener('click', () => this.openCategoriesModal(false));
     this.btnAddCategory.addEventListener('click', () => this.addNewCategory());
     this.newCategoryInput.addEventListener('keypress', (e) => {
@@ -841,41 +845,7 @@ class AdminController {
     }
   }
 
-  // --- DISTRIBUIÇÃO E BACKUPS ---
-  exportDatabase() {
-    const jsonStr = window.storageService.exportDatabase();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inovar_kb_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  importDatabase(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target.result;
-      const success = window.storageService.importDatabase(content);
-      if (success) {
-        window.showToast('Banco de Dados da Base de Conhecimento importado com sucesso!', 'success');
-        this.renderArticlesList();
-        this.resetFormForNew();
-      } else {
-        window.showToast('Erro ao importar backup. Verifique se o arquivo JSON está correto.', 'error');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = ''; // Reseta input de arquivo
-  }
+  // Distribuição e Backups em formato JSON removidos a pedido do usuário
 
   // --- IMPORTADOR DISCORD (3 COLUNAS) ---
   async openDiscordModal(open) {
@@ -1575,7 +1545,11 @@ class AdminController {
       this.newCategoryInput.value = '';
       this.renderCategoriesModalList();
       this.populateCategoriesSelect();
+      this.populateCurationCategories();
       this.formCategory.value = name;
+      if (this.curationCategory) {
+        this.curationCategory.value = name;
+      }
     } else {
       window.showToast('Esta categoria já existe na lista.', 'warning');
     }
@@ -1603,6 +1577,7 @@ class AdminController {
         window.showToast(`Categoria excluída com sucesso! ${updatedCount > 0 ? updatedCount + ' artigo(s) movido(s) para Geral.' : ''}`, 'success');
         this.renderCategoriesModalList();
         this.populateCategoriesSelect();
+        this.populateCurationCategories();
         this.renderArticlesList();
       } else {
         window.showToast('Erro ao excluir a categoria.', 'error');

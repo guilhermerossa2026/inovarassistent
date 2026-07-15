@@ -35,3 +35,9 @@ Em Julho de 2026, realizamos uma reformulação visual completa do Inovar Assist
   4. Copiar `css/chat.css.bak` sobrescrevendo `css/chat.css`.
   5. Rodar o comando `npm run build-win` para recompilar e atualizar o executável da pasta raiz.
 
+---
+
+## 4. Recompilação Obrigatória do Executável (Build-Win)
+- **Compilação Automática**: Sempre que houver alteração de código (novas features, correções de bugs, ajustes de design/CSS/HTML), o assistente deve **obrigatoriamente** rodar o comando `npm run build-win` para atualizar o executável portable (`Inovar Assist.exe`) na pasta raiz. Isso garante que a versão final empacotada do software esteja sempre alinhada com as modificações mais recentes.
+
+

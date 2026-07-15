@@ -165,9 +165,17 @@
                 <div class="column-header">
                   <div class="column-title-row">
                     <span class="column-title">Artigos Salvos</span>
-                    <button id="btn-new-article" class="btn-small">
-                      + Novo
-                    </button>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                      <button id="btn-open-discord-import" class="btn-small" style="background-color: #5865F2; border-color: #5865F2; color: #ffffff;" title="Importar do Discord">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Importar do Discord
+                      </button>
+                      <button id="btn-new-article" class="btn-small">
+                        + Novo
+                      </button>
+                    </div>
                   </div>
                   <div class="search-wrapper">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -241,33 +249,7 @@
               </main>
             </div>
 
-            <!-- Seção Auxiliar de utilidades (Backups e Discord) -->
-            <footer class="admin-utilities-section">
-              <div class="utility-box">
-                <span class="utility-title">Importador Rápido</span>
-                <div class="utility-actions">
-                  <button id="btn-open-discord-import" class="btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 1rem; border-color: #5865F2; color: #5865F2; display: flex; align-items: center; gap: 0.4rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    Converter Instruções
-                  </button>
-                </div>
-              </div>
-
-              <div class="utility-box">
-                <span class="utility-title">Distribuição & Backup da Base</span>
-                <div class="utility-actions">
-                  <button id="btn-export-db" class="btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 1rem;">
-                    Exportar JSON (.json)
-                  </button>
-                  <label for="file-import-db" class="file-input-label">
-                    Importar Base (JSON)
-                  </label>
-                  <input type="file" id="file-import-db" accept=".json" style="display: none;">
-                </div>
-              </div>
-            </footer>
+            <!-- Seção de Backups e Utilitários removida conforme solicitação -->
           </div>
 
           <!-- ABA B: RELATÓRIOS E ANALÍTICA -->
@@ -512,6 +494,9 @@
                         <input type="text" id="settings-discord-guild" class="form-input" placeholder="Ex: 123456789012345678..." autocomplete="off">
                       </div>
                     </div>
+                    <button type="button" id="btn-save-discord" class="btn-primary" style="width: auto; margin-top: 1rem; padding: 0.55rem 1.5rem;">
+                      Salvar Configurações do Discord
+                    </button>
                   </form>
                 </div>
 
@@ -654,7 +639,12 @@
           <div class="form-grid-2" style="margin-top: 0.5rem;">
             <div class="form-group">
               <label for="curation-category" class="form-label">Categoria</label>
-              <select id="curation-category" class="form-input"></select>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <select id="curation-category" class="form-input" style="cursor: pointer; flex: 1;"></select>
+                <button type="button" id="btn-manage-categories-curation" class="btn-secondary" style="width: auto; padding: 0.6rem 0.85rem;" title="Gerenciar Categorias">
+                  <strong>+</strong>
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="curation-tags" class="form-label">Tags (Separadas por vírgula)</label>
