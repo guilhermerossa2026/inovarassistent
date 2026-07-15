@@ -1,0 +1,98 @@
+/* CSS Global - Design System Suporte Hub para Inovar Assistente */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Design Tokens de Cores - Tema Principal (Vermelho Inovar / Suporte Hub) */
+  --bg-primary: #050506;
+  --bg-secondary: #0c0c0e;
+  --bg-tertiary: #131317;
+  --bg-glass: rgba(12, 12, 14, 0.75);
+  
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(148, 0, 9, 0.2);
+  
+  --inovar-red: #940009;
+  --inovar-red-hover: #b5000c;
+  --inovar-red-glow: rgba(255, 0, 21, 0.4);
+  
+  --cyber-blue: #104D73;
+  --cyber-blue-hover: #166596;
+  --cyber-blue-glow: rgba(30, 139, 195, 0.3);
+  
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  
+  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --shadow-glow-red: 0 0 15px var(--inovar-red-glow);
+  --shadow-glow-blue: 0 0 15px var(--cyber-blue-glow);
+}
+
+/* Reset de Layout */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbars Modernas */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Animações e Efeitos */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 0, 21, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 0, 21, 0.45);
+  }
+}
+
+.glow-panel-red {
+  border: 1px solid var(--border-glow);
+  animation: glowPulse 4s infinite alternate;
+}
+
+/* Efeito de Vidro Desfocado (Glassmorphism) */
+.glass-effect {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
