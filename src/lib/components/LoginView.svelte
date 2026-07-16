@@ -1,4 +1,5 @@
 <script>
+  // @ts-nocheck
   import { onMount } from 'svelte';
   import { storage } from '$lib/services/storage.svelte.js';
 
@@ -56,12 +57,21 @@
 </script>
 
 <div class="login-view-container">
+  <!-- Decorative background mesh -->
+  <div class="bg-glow-effect"></div>
+  
   <div class="login-card glass-effect glow-panel-red">
     <div class="login-logo-container">
-      <div class="cyber-logo">IA</div>
+      <div class="cyber-logo">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="logo-svg">
+          <path d="M12 2L2 22h20L12 2zm0 3.99L18.47 19H5.53L12 5.99z" />
+          <path d="M11 16h2v2h-2zm0-6h2v4h-2z" opacity="0.9" />
+        </svg>
+      </div>
     </div>
-    <h2 class="login-title">Portal de Suporte</h2>
-    <p class="login-subtitle">Identifique-se para acessar a base de erros do Sistema Inovar</p>
+    
+    <h2 class="login-title">Inovar Assistente</h2>
+    <p class="login-subtitle">Acesse a central offline de suporte inteligente</p>
 
     {#if errorMessage}
       <div class="error-banner">{errorMessage}</div>
@@ -73,13 +83,13 @@
         type="text" 
         id="login-username" 
         class="form-input" 
-        placeholder="Digite seu usuário..." 
+        placeholder="Seu usuário de técnico..." 
         bind:value={username}
         autocomplete="off"
         required
       />
 
-      <label for="login-password" class="form-label" style="margin-top: 1rem;">Senha de Acesso</label>
+      <label for="login-password" class="form-label" style="margin-top: 1.25rem;">Senha de Acesso</label>
       <input 
         type="password" 
         id="login-password" 
@@ -93,13 +103,13 @@
       
       <div class="checkbox-container">
         <input type="checkbox" id="login-save-session" bind:checked={saveSession} />
-        <label for="login-save-session" class="checkbox-label">Lembrar usuário e senha neste dispositivo</label>
+        <label for="login-save-session" class="checkbox-label">Manter-me conectado neste terminal</label>
       </div>
     </div>
 
-    <button onclick={handleSubmit} class="btn-primary">
-      Iniciar Atendimento
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <button onclick={handleSubmit} class="btn-login">
+      <span>Conectar ao Sistema</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="5" y1="12" x2="19" y2="12"></line>
         <polyline points="12 5 19 12 12 19"></polyline>
       </svg>
@@ -109,22 +119,36 @@
 
 <style>
   .login-view-container {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100vh;
     background-color: var(--bg-primary);
-    background-image: radial-gradient(circle at 50% 50%, rgba(148, 0, 9, 0.05) 0%, transparent 70%);
+    overflow: hidden;
+  }
+
+  .bg-glow-effect {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.04) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .login-card {
+    position: relative;
     width: 100%;
-    max-width: 420px;
-    padding: 2.5rem;
+    max-width: 400px;
+    padding: 3rem 2.5rem;
     border-radius: var(--radius-lg);
     text-align: center;
-    background: var(--bg-glass);
-    border: 1px solid var(--border-color);
+    z-index: 10;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   }
 
   .login-logo-container {
@@ -134,46 +158,56 @@
   }
 
   .cyber-logo {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: rgba(148, 0, 9, 0.15);
-    border: 2px solid var(--inovar-red);
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    background: rgba(244, 63, 94, 0.04);
+    border: 1px solid rgba(244, 63, 94, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ff3e4e;
-    font-size: 1.5rem;
-    font-weight: 800;
-    font-family: 'Outfit', sans-serif;
-    box-shadow: 0 0 20px rgba(148, 0, 9, 0.25);
+    color: var(--inovar-red);
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.1);
+    transition: var(--transition-normal);
+  }
+
+  .cyber-logo:hover {
+    transform: scale(1.05) rotate(5deg);
+    border-color: var(--inovar-red);
+    box-shadow: 0 0 25px rgba(244, 63, 94, 0.2);
+  }
+
+  .logo-svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
   }
 
   .login-title {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     color: var(--text-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: -0.01em;
   }
 
   .login-subtitle {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
     margin-bottom: 2rem;
   }
 
   .error-banner {
-    background: rgba(255, 51, 51, 0.1);
-    border: 1px solid rgba(255, 51, 51, 0.3);
-    color: #ff5252;
-    padding: 0.75rem;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    padding: 0.75rem 1rem;
     border-radius: var(--radius-md);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     margin-bottom: 1.5rem;
     text-align: left;
+    line-height: 1.4;
   }
 
   .form-group {
@@ -185,39 +219,25 @@
     display: block;
     font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    transition: var(--transition-fast);
-    outline: none;
-  }
-
-  .form-input:focus {
-    border-color: var(--inovar-red-hover);
-    box-shadow: 0 0 10px rgba(148, 0, 9, 0.2);
-    background: rgba(255, 255, 255, 0.04);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.45rem;
   }
 
   .checkbox-container {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-top: 1rem;
+    gap: 0.55rem;
+    margin-top: 1.25rem;
   }
 
   #login-save-session {
     cursor: pointer;
+    width: 15px;
+    height: 15px;
+    accent-color: var(--inovar-red);
+    border-radius: 4px;
   }
 
   .checkbox-label {
@@ -227,12 +247,12 @@
     user-select: none;
   }
 
-  .btn-primary {
+  .btn-login {
     width: 100%;
     padding: 0.8rem 1.5rem;
     background: var(--inovar-red);
-    border: 1px solid var(--inovar-red-hover);
-    color: #fff;
+    border: none;
+    color: #ffffff;
     border-radius: var(--radius-md);
     cursor: pointer;
     font-weight: 600;
@@ -244,8 +264,13 @@
     font-size: 0.85rem;
   }
 
-  .btn-primary:hover {
+  .btn-login:hover {
     background: var(--inovar-red-hover);
-    box-shadow: 0 0 15px rgba(148, 0, 9, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);
+  }
+
+  .btn-login:active {
+    transform: translateY(0);
   }
 </style>

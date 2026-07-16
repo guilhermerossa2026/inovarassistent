@@ -1,42 +1,64 @@
-/* CSS Global - Design System Suporte Hub para Inovar Assistente */
+/* CSS Global - Design System Suporte Hub Premium para Inovar Assistente */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Design Tokens de Cores - Tema Principal (Vermelho Inovar / Suporte Hub) */
-  --bg-primary: #050506;
-  --bg-secondary: #0c0c0e;
-  --bg-tertiary: #131317;
-  --bg-glass: rgba(12, 12, 14, 0.75);
+  /* Cores Base de Fundo */
+  --bg-primary: #09090b;       /* Zinc 950 */
+  --bg-secondary: #121214;     /* Zinc 900 */
+  --bg-tertiary: #18181b;      /* Zinc 800 */
+  --bg-glass: rgba(18, 18, 20, 0.75);
   
+  /* Bordas e Divisores */
   --border-color: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(148, 0, 9, 0.2);
+  --border-glow: rgba(244, 63, 94, 0.25);
   
-  --inovar-red: #940009;
-  --inovar-red-hover: #b5000c;
-  --inovar-red-glow: rgba(255, 0, 21, 0.4);
+  /* Tema Vermelho (Padrão) - Rose/Crimson Premium */
+  --inovar-red: #f43f5e;
+  --inovar-red-hover: #e11d48;
+  --inovar-red-glow: rgba(244, 63, 94, 0.35);
   
-  --cyber-blue: #104D73;
-  --cyber-blue-hover: #166596;
-  --cyber-blue-glow: rgba(30, 139, 195, 0.3);
+  /* Tema Azul - Electric Blue */
+  --cyber-blue: #3b82f6;
+  --cyber-blue-hover: #2563eb;
+  --cyber-blue-glow: rgba(59, 130, 246, 0.3);
   
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  /* Tipografia */
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;  /* Zinc 400 */
+  --text-muted: #71717a;      /* Zinc 500 */
   
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Cantos Arredondados */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
   
-  --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Transições Suaves */
+  --transition-fast: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   
-  --shadow-glow-red: 0 0 15px var(--inovar-red-glow);
-  --shadow-glow-blue: 0 0 15px var(--cyber-blue-glow);
+  /* Efeitos de Sombra com Brilho Glow */
+  --shadow-glow-red: 0 0 20px var(--inovar-red-glow);
+  --shadow-glow-blue: 0 0 20px var(--cyber-blue-glow);
 }
 
-/* Reset de Layout */
+/* Temas Alternativos Dinâmicos */
+body.theme-blue {
+  --inovar-red: #3b82f6;
+  --inovar-red-hover: #2563eb;
+  --inovar-red-glow: rgba(59, 130, 246, 0.3);
+  --border-glow: rgba(59, 130, 246, 0.25);
+}
+
+body.theme-green {
+  --inovar-red: #10b981;
+  --inovar-red-hover: #059669;
+  --inovar-red-glow: rgba(16, 185, 129, 0.3);
+  --border-glow: rgba(16, 185, 129, 0.25);
+}
+
+/* Reset Geral */
 * {
   margin: 0;
   padding: 0;
@@ -55,44 +77,62 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbars Modernas */
+/* Customização de Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* Animações e Efeitos */
-@keyframes glowPulse {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(255, 0, 21, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(255, 0, 21, 0.45);
-  }
-}
-
-.glow-panel-red {
-  border: 1px solid var(--border-glow);
-  animation: glowPulse 4s infinite alternate;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Efeito de Vidro Desfocado (Glassmorphism) */
 .glass-effect {
   background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
+}
+
+/* Painel com Glow Suave */
+.glow-panel-red {
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(244, 63, 94, 0.05);
+}
+
+/* Inputs Premium */
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary) !important;
+  font-size: 0.85rem !important;
+  outline: none;
+  transition: var(--transition-fast) !important;
+}
+
+.form-input:focus {
+  border-color: var(--inovar-red) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15) !important;
+}
+
+body.theme-blue .form-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+body.theme-green .form-input:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
 }

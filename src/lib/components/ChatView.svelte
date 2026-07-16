@@ -43,7 +43,7 @@
     const username = storage.currentUser ? storage.currentUser.username : '';
     messages.push({
       sender: 'bot',
-      text: `Olá, técnico **${username}**. Sou o assistente de suporte da **Inovar**.\n\nEstou conectado à nossa base de conhecimentos central offline.\n\nComo posso te ajudar a resolver o chamado do Sistema Inovar de hoje? *Digite o erro ou palavra-chave diretamente abaixo para eu buscar a solução.*`,
+      text: `Olá, técnico **${username}**. Sou o assistente de suporte da **Inovar**.\n\nEstou conectado à nossa base de conhecimentos central offline.\n\nComo posso te ajudar a resolver o chamado do Sistema Inovar de hoje? *Selecione uma das categorias rápidas ou digite o erro/termo abaixo para eu realizar a busca.*`,
       time: getCurrentTime(),
       showOnboardingChips: true
     });
@@ -206,7 +206,7 @@
         relevancePercent = Math.min(100, Math.round((bestScore / 15) * 100));
       }
 
-      const botText = `Encontrei a resolução correspondente na nossa Base de Conhecimento!\n\n## **${bestMatch.title}**\n*Categoria: **${bestMatch.category}** (Relevância: ${relevancePercent}% - Score: ${bestScore})*\n\n> ${bestMatch.description}\n\n${bestMatch.solution}`;
+      const botText = `Encontrei a resolução correspondente na nossa Base de Conhecimento!\n\n### **${bestMatch.title}**\n*Categoria: **${bestMatch.category}** (Relevância: ${relevancePercent}% - Score: ${bestScore})*\n\n> ${bestMatch.description}\n\n${bestMatch.solution}`;
       const related = matched.slice(1, 3).map(item => item.artigo);
 
       messages.push({
@@ -222,7 +222,7 @@
       lastMatchedArticleId = null;
       messages.push({
         sender: 'bot',
-        text: `Não encontrei uma solução exata para a pesquisa: **"${query}"** nos manuais locais do Sistema Inovar.\n\n### Dicas para buscar melhor:\n* Tente buscar por termos simples e curtos (ex: \`timeout\`, \`deadlock\`, \`filizola\`, \`spooler\`).\n* Se for erro do Windows, clique nos chips iniciais ou busque pelo periférico (ex: \`impressora\`, \`balança\`).\n\nVocê também pode acessar o painel administrativo para cadastrar este novo erro ou importar rascunhos!`,
+        text: `Não encontrei uma solução exata para a pesquisa: **"${query}"** nos manuais locais do Sistema Inovar.\n\n#### Dicas para buscar melhor:\n- Tente buscar por termos simples e curtos (ex: \`timeout\`, \`deadlock\`, \`filizola\`, \`spooler\`).\n- Se for erro do Windows, clique nos chips iniciais ou busque pelo periférico (ex: \`impressora\`, \`balança\`).\n\nVocê também pode acessar o painel administrativo para cadastrar este novo erro ou importar rascunhos!`,
         time: getCurrentTime()
       });
     }
@@ -344,13 +344,13 @@
 </script>
 
 <div class="chat-container">
-  <!-- Header principal com operador ativo -->
-  <header class="chat-header glow-panel-red glass-effect">
+  <!-- Thin, elegant translucent navbar -->
+  <header class="chat-header glass-effect">
     <div class="header-left">
       <div class="status-indicator"></div>
       <div class="title-section">
         <h1>Inovar Assistente</h1>
-        <span class="subtitle">Suporte Inteligente On-line</span>
+        <span class="subtitle">Suporte Inteligente</span>
       </div>
     </div>
     
@@ -358,28 +358,29 @@
       {#if storage.currentUser}
         <div class="operator-badge">
           <span class="operator-dot"></span>
-          <span>Técnico: <strong style="color: var(--text-primary);">{storage.currentUser.username.toUpperCase()}</strong></span>
-          <button class="logout-btn" onclick={handleLogoutClick} title="Trocar Operador">(Mudar)</button>
+          <span>Técnico: <strong>{storage.currentUser.username.toUpperCase()}</strong></span>
+          <button class="logout-btn" onclick={handleLogoutClick} title="Trocar Operador">Mudar</button>
         </div>
       {/if}
-      <span class="version-badge">v2.0 (Tauri)</span>
+      <span class="version-badge">v2.1</span>
     </div>
   </header>
 
-  <!-- Janela de conversa -->
+  <!-- Conversation Panel -->
   <main class="chat-messages" bind:this={chatMessagesEl}>
+    <div class="chat-scroll-mesh"></div>
     {#each messages as msg, index}
-      <div class="message-wrapper {msg.sender === 'user' ? 'user-align' : 'bot-align'}" in:slide={{ duration: 150 }}>
+      <div class="message-wrapper {msg.sender === 'user' ? 'user-align' : 'bot-align'}" in:slide={{ duration: 180 }}>
         {#if msg.sender === 'bot'}
           <div class="avatar bot-avatar">IA</div>
         {/if}
         
-        <div class="message-bubble {msg.sender === 'user' ? 'user-bubble' : 'bot-bubble glass-effect'}">
+        <div class="message-bubble {msg.sender === 'user' ? 'user-bubble' : 'bot-bubble'}">
           <div class="message-text">
             {@html parseMarkdown(msg.text)}
           </div>
 
-          <!-- Onboarding categories chips -->
+          <!-- Onboarding categories chips (Outlines) -->
           {#if msg.showOnboardingChips}
             <div class="category-chips-grid">
               <button class="category-chip" onclick={() => triggerChipSearch('Área Fiscal (NF-e)')}>📄 Área Fiscal (NF-e)</button>
@@ -405,7 +406,7 @@
           {#if msg.clientFriendly}
             <div class="client-response-box">
               <div class="client-response-header">
-                <span>💬 Mensagem Pronta para o Cliente</span>
+                <span>💬 Resposta para o Cliente</span>
                 <button class="copy-canned-btn" onclick={() => copyText(msg.clientFriendly)}>
                   Copiar Mensagem
                 </button>
@@ -430,18 +431,18 @@
             </div>
           {/if}
 
-          <!-- Solution feedback ratings -->
+          <!-- Solution feedback ratings (Sleek Outlines) -->
           {#if msg.showFeedback && msg.articleId}
             <div class="bot-response-actions">
               {#if msg.feedbackStatus === 'solved'}
                 <span class="feedback-badge success">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  Resolvido pelo Operador!
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Resolvido pelo Operador
                 </span>
               {:else}
                 <button class="action-button success-action" onclick={() => setSolved(index, msg.articleId, true)}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  Resolveu o Problema!
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Resolvido!
                 </button>
                 {#if msg.feedbackStatus !== 'unsolved'}
                   <button class="action-button cancel-action" onclick={() => setSolved(index, msg.articleId, false)}>
@@ -473,12 +474,12 @@
     {/if}
   </main>
 
-  <!-- Input no rodapé com botão de admin -->
+  <!-- Input dock floating -->
   <footer class="chat-input-bar glass-effect">
     <div class="input-wrapper">
       {#if storage.currentUser && storage.currentUser.role === 'ADM'}
         <button class="icon-button admin-trigger" onclick={onOpenAdmin} title="Painel Administrativo">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
@@ -498,9 +499,9 @@
         class="send-button" 
         disabled={!chatInput.trim() || isTyping} 
         onclick={handleSend}
-        style="background: {chatInput.trim() ? 'var(--inovar-red)' : 'rgba(255,255,255,0.05)'}"
+        style="background: {chatInput.trim() ? 'var(--inovar-red)' : 'transparent'}"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
           <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
         </svg>
@@ -521,7 +522,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.85rem 1.25rem;
+    padding: 0.75rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
     z-index: 10;
   }
@@ -529,36 +530,34 @@
   .header-left {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
   }
 
   .status-indicator {
-    width: 9px;
-    height: 9px;
-    background-color: #00ff66;
+    width: 7px;
+    height: 7px;
+    background-color: #10b981;
     border-radius: 50%;
-    box-shadow: 0 0 8px #00ff66;
+    box-shadow: 0 0 8px #10b981;
   }
 
   .title-section h1 {
     font-family: 'Outfit', sans-serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: -0.01em;
     color: var(--text-primary);
-    text-transform: uppercase;
   }
 
   .subtitle {
     font-size: 0.65rem;
-    color: var(--text-secondary);
-    letter-spacing: 0.05em;
+    color: var(--text-muted);
   }
 
   .header-right {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .operator-badge {
@@ -569,16 +568,15 @@
     color: var(--text-secondary);
     background: rgba(255,255,255,0.02);
     border: 1px solid var(--border-color);
-    padding: 0.25rem 0.6rem;
+    padding: 0.25rem 0.65rem;
     border-radius: 20px;
   }
 
   .operator-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--inovar-red-hover);
+    width: 5px;
+    height: 5px;
+    background: var(--inovar-red);
     border-radius: 50%;
-    box-shadow: 0 0 6px var(--inovar-red-hover);
   }
 
   .logout-btn {
@@ -588,36 +586,56 @@
     cursor: pointer;
     font-size: 0.75rem;
     transition: var(--transition-fast);
+    text-decoration: underline;
+    margin-left: 0.2rem;
   }
 
   .logout-btn:hover {
-    color: #ff5252;
+    color: var(--inovar-red);
   }
 
   .version-badge {
     font-size: 0.65rem;
-    padding: 0.2rem 0.5rem;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 0.15rem 0.45rem;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
   }
 
   .chat-messages {
+    position: relative;
     flex: 1;
     overflow-y: auto;
-    padding: 1.5rem;
+    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    background-image: radial-gradient(circle at 50% 10%, rgba(148, 0, 9, 0.03) 0%, transparent 60%);
+    gap: 1.5rem;
+  }
+
+  .chat-scroll-mesh {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: radial-gradient(circle at 50% 10%, rgba(244, 63, 94, 0.02) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body.theme-blue .chat-scroll-mesh {
+    background-image: radial-gradient(circle at 50% 10%, rgba(59, 130, 246, 0.02) 0%, transparent 60%);
+  }
+  
+  body.theme-green .chat-scroll-mesh {
+    background-image: radial-gradient(circle at 50% 10%, rgba(16, 185, 129, 0.02) 0%, transparent 60%);
   }
 
   .message-wrapper {
+    position: relative;
     display: flex;
-    align-items: flex-end;
-    gap: 0.75rem;
-    max-width: 85%;
+    align-items: flex-start;
+    gap: 0.85rem;
+    max-width: 80%;
+    z-index: 10;
   }
 
   .user-align {
@@ -629,50 +647,50 @@
   }
 
   .avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     user-select: none;
     border: 1px solid var(--border-color);
+    margin-top: 0.25rem;
   }
 
   .bot-avatar {
-    background: rgba(148, 0, 9, 0.2);
-    color: #ff3e4e;
-    border-color: rgba(148, 0, 9, 0.4);
-    box-shadow: 0 0 10px rgba(148, 0, 9, 0.15);
+    background: rgba(254, 226, 226, 0.02);
+    color: var(--inovar-red);
+    border-color: rgba(244, 63, 94, 0.2);
   }
 
   .user-avatar {
-    background: rgba(16, 77, 115, 0.2);
-    color: #39a3ff;
-    border-color: rgba(16, 77, 115, 0.4);
-    box-shadow: 0 0 10px rgba(16, 77, 115, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-secondary);
   }
 
   .message-bubble {
-    padding: 0.85rem 1.15rem;
+    padding: 0.9rem 1.15rem;
     border-radius: var(--radius-lg);
-    font-size: 0.85rem;
-    line-height: 1.5;
+    font-size: 0.84rem;
+    line-height: 1.6;
   }
 
   .bot-bubble {
-    border-bottom-left-radius: 2px;
+    border-top-left-radius: 2px;
     background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--inovar-red);
     color: var(--text-primary);
   }
 
   .user-bubble {
-    border-bottom-right-radius: 2px;
-    background: var(--cyber-blue);
-    color: #ffffff;
-    box-shadow: var(--shadow-glow-blue);
+    border-top-right-radius: 2px;
+    background: #18181b;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
   }
 
   .message-text :global(p) {
@@ -683,7 +701,7 @@
     margin-bottom: 0;
   }
 
-  .message-text :global(h2), .message-text :global(h3) {
+  .message-text :global(h3) {
     font-family: 'Outfit', sans-serif;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
@@ -693,25 +711,26 @@
   }
 
   .message-text :global(blockquote) {
-    border-left: 3px solid var(--inovar-red);
-    background: rgba(255,255,255,0.02);
+    border-left: 2px solid var(--inovar-red);
+    background: rgba(255, 255, 255, 0.01);
     padding: 0.5rem 0.75rem;
     margin: 0.75rem 0;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 0.8rem;
   }
 
   .message-text :global(code) {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
-    background: rgba(255,255,255,0.06);
-    padding: 0.15rem 0.3rem;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 0.1rem 0.25rem;
     border-radius: 4px;
-    color: #ff5252;
+    color: #ff6b6b;
   }
 
   .message-text :global(pre) {
     position: relative;
-    background: #08080a;
+    background: #0d0d0f;
     border: 1px solid var(--border-color);
     padding: 0.75rem 1rem;
     border-radius: var(--radius-md);
@@ -722,17 +741,17 @@
   .message-text :global(pre code) {
     background: none;
     padding: 0;
-    color: #e0e0e0;
+    color: #e4e4e7;
     font-size: 0.75rem;
   }
 
   .message-text :global(ul) {
-    margin-left: 1.25rem;
+    margin-left: 1.2rem;
     margin-bottom: 0.75rem;
   }
 
   .message-text :global(li) {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
   }
 
   .message-time {
@@ -743,29 +762,37 @@
     margin-top: 0.5rem;
   }
 
-  /* Onboarding chips */
+  /* Outlined Categories capsules */
   .category-chips-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-top: 1rem;
   }
 
   .category-chip {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-secondary);
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.72rem;
     cursor: pointer;
     transition: var(--transition-fast);
   }
 
   .category-chip:hover {
-    background: rgba(148, 0, 9, 0.15);
-    border-color: var(--inovar-red-hover);
+    background: rgba(244, 63, 94, 0.08);
+    border-color: var(--inovar-red);
     color: #ffffff;
+  }
+
+  body.theme-blue .category-chip:hover {
+    background: rgba(59, 130, 246, 0.08);
+  }
+  
+  body.theme-green .category-chip:hover {
+    background: rgba(16, 185, 129, 0.08);
   }
 
   .related-container {
@@ -775,20 +802,19 @@
   }
 
   .related-title {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
     font-weight: 700;
     text-transform: uppercase;
   }
 
   .related-chip {
-    background: rgba(16, 77, 115, 0.05) !important;
-    border-color: rgba(16, 77, 115, 0.2) !important;
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
   }
 
   .related-chip:hover {
-    background: rgba(16, 77, 115, 0.15) !important;
-    border-color: #39a3ff !important;
+    border-color: var(--inovar-red) !important;
     color: #ffffff !important;
   }
 
@@ -796,7 +822,7 @@
   .interactive-choices-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-top: 1rem;
     width: 100%;
   }
@@ -805,27 +831,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.01);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.65rem 1rem;
+    color: var(--text-secondary);
+    padding: 0.55rem 0.85rem;
     border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 0.8rem;
-    text-align: left;
+    font-size: 0.78rem;
     transition: var(--transition-fast);
   }
 
   .interactive-choice-btn:hover {
-    border-color: var(--inovar-red-hover);
-    background: rgba(148, 0, 9, 0.1);
-    box-shadow: 0 0 10px rgba(148, 0, 9, 0.1);
+    border-color: var(--inovar-red);
+    background: rgba(254, 226, 226, 0.01);
+    color: var(--text-primary);
   }
 
   /* Canned client responses */
   .client-response-box {
-    background: rgba(0, 148, 91, 0.04);
-    border: 1px solid rgba(0, 148, 91, 0.2);
+    background: rgba(16, 185, 129, 0.02);
+    border: 1px solid rgba(16, 185, 129, 0.12);
     border-radius: var(--radius-md);
     padding: 0.75rem 1rem;
     margin-top: 1rem;
@@ -835,26 +860,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
-    color: #00cc80;
+    color: #10b981;
     text-transform: uppercase;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
   }
 
   .copy-canned-btn {
-    background: rgba(0, 148, 91, 0.1);
-    border: 1px solid rgba(0, 148, 91, 0.3);
-    color: #00ff9d;
-    font-size: 0.65rem;
-    padding: 0.25rem 0.5rem;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    font-size: 0.62rem;
+    padding: 0.2rem 0.45rem;
     border-radius: 4px;
     cursor: pointer;
     transition: var(--transition-fast);
   }
 
   .copy-canned-btn:hover {
-    background: rgba(0, 148, 91, 0.2);
+    background: rgba(16, 185, 129, 0.15);
     color: #ffffff;
   }
 
@@ -868,64 +893,65 @@
   /* Feedback actions */
   .bot-response-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
     margin-top: 1rem;
     border-top: 1px solid var(--border-color);
     padding-top: 0.75rem;
   }
 
   .action-button {
-    background: rgba(255,255,255,0.02);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    padding: 0.4rem 0.8rem;
+    padding: 0.35rem 0.65rem;
     border-radius: var(--radius-sm);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     cursor: pointer;
     transition: var(--transition-fast);
   }
 
   .success-action:hover {
-    background: rgba(0, 148, 91, 0.15);
-    border-color: #00cc80;
+    background: rgba(16, 185, 129, 0.08);
+    border-color: #10b981;
     color: #ffffff;
   }
 
   .cancel-action:hover {
-    background: rgba(255, 82, 82, 0.15);
-    border-color: #ff5252;
+    background: rgba(239, 68, 68, 0.08);
+    border-color: #ef4444;
     color: #ffffff;
   }
 
   .feedback-badge {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.6rem;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    padding: 0.25rem 0.55rem;
     border-radius: 4px;
   }
 
   .feedback-badge.success {
-    background: rgba(0, 148, 91, 0.1);
-    color: #00ff9d;
-    border: 1px solid rgba(0, 148, 91, 0.2);
+    background: rgba(16, 185, 129, 0.08);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.15);
   }
 
   .typing-indicator {
-    padding: 0.75rem 1.25rem;
+    padding: 0.65rem 1.15rem;
     border-radius: var(--radius-lg);
-    border-bottom-left-radius: 2px;
+    border-top-left-radius: 2px;
     display: flex;
-    gap: 4px;
+    gap: 3px;
     align-items: center;
     background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
   }
 
   .typing-indicator span {
-    width: 6px;
-    height: 6px;
-    background-color: var(--text-secondary);
+    width: 5px;
+    height: 5px;
+    background-color: var(--text-muted);
     border-radius: 50%;
     animation: bounce 1.2s infinite ease-in-out;
   }
@@ -940,11 +966,11 @@
 
   @keyframes bounce {
     0%, 100%, 80% { transform: translateY(0); }
-    40% { transform: translateY(-5px); }
+    40% { transform: translateY(-4px); }
   }
 
   .chat-input-bar {
-    padding: 1rem 1.5rem;
+    padding: 1rem 2rem 1.5rem;
     border-top: 1px solid var(--border-color);
   }
 
@@ -952,16 +978,24 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.01);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+    padding: 0.25rem 0.4rem 0.25rem 0.75rem;
     transition: var(--transition-normal);
   }
 
   .input-wrapper:focus-within {
-    border-color: var(--cyber-blue-hover);
-    box-shadow: var(--shadow-glow-blue);
+    border-color: var(--inovar-red);
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12);
+  }
+
+  body.theme-blue .input-wrapper:focus-within {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  }
+
+  body.theme-green .input-wrapper:focus-within {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
   }
 
   .input-field {
@@ -994,12 +1028,12 @@
 
   .icon-button:hover {
     color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .send-button {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-md);
     border: none;
     outline: none;

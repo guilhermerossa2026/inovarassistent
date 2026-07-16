@@ -497,21 +497,21 @@
   <div class="password-overlay">
     <div class="password-card glass-effect glow-panel-red">
       <div class="password-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
       </div>
-      <h3 class="password-title">Portal do Administrador</h3>
-      <p class="password-desc">Insira a chave de segurança administrativa para acessar</p>
+      <h3 class="password-title">Área Administrativa</h3>
+      <p class="password-desc">Confirme a chave administrativa para gerenciar a base de dados</p>
 
       <div class="form-group" style="margin-bottom: 1.5rem;">
         <input 
           type="password" 
           bind:value={adminPasswordInput} 
           class="form-input" 
-          style="text-align: center; letter-spacing: 0.25em;" 
-          placeholder="••••••••" 
+          style="text-align: center; letter-spacing: 0.15em;" 
+          placeholder="••••" 
           onkeydown={(e) => e.key === 'Enter' && verifyPassword()}
         />
         {#if adminPasswordError}
@@ -521,7 +521,7 @@
 
       <div class="modal-actions-flex">
         <button class="btn-secondary" onclick={onCloseAdmin}>Cancelar</button>
-        <button class="btn-primary" onclick={verifyPassword}>Acessar Portal</button>
+        <button class="btn-primary" onclick={verifyPassword}>Confirmar Chave</button>
       </div>
     </div>
   </div>
@@ -534,7 +534,7 @@
           📄 Gerenciar Base
         </button>
         <button class="admin-tab-btn {currentTab === 'reports' ? 'active' : ''}" onclick={() => currentTab = 'reports'}>
-          📊 Relatórios & Métricas
+          📊 Relatórios
         </button>
         <button class="admin-tab-btn {currentTab === 'settings' ? 'active' : ''}" onclick={() => currentTab = 'settings'}>
           ⚙️ Configurações
@@ -549,11 +549,11 @@
     <div class="admin-content-viewport">
       <!-- ARTICLES CRUD TAB -->
       {#if currentTab === 'articles'}
-        <div class="admin-split-layout" in:fade={{ duration: 100 }}>
+        <div class="admin-split-layout" in:fade={{ duration: 120 }}>
           <aside class="sidebar-column glass-effect">
             <div class="sidebar-header">
               <div class="sidebar-title-row">
-                <span>Artigos Salvos</span>
+                <span>Instruções Salvas</span>
                 <div class="btn-row">
                   <button class="btn-discord" onclick={openDiscordImporter}>Discord</button>
                   <button class="btn-new" onclick={resetArticleForm}>+ Novo</button>
@@ -562,7 +562,7 @@
               <input 
                 type="text" 
                 class="search-input-small" 
-                placeholder="Filtrar por título, tag..." 
+                placeholder="Pesquisar título ou tags..." 
                 bind:value={articleSearchQuery}
               />
             </div>
@@ -580,7 +580,7 @@
           <main class="form-column glass-effect">
             <div class="form-group">
               <label class="form-label" for="form-title">Título do Artigo</label>
-              <input type="text" id="form-title" class="form-input" placeholder="Ex: Erro de Spooler de Impressora..." bind:value={formTitle} />
+              <input type="text" id="form-title" class="form-input" placeholder="Ex: Configurar Balança Filizola..." bind:value={formTitle} />
             </div>
 
             <div class="form-grid-2">
@@ -598,18 +598,18 @@
               
               <div class="form-group">
                 <label class="form-label" for="form-tags">Tags (separadas por vírgula)</label>
-                <input type="text" id="form-tags" class="form-input" placeholder="nfe, sefaz, erro" bind:value={formTags} />
+                <input type="text" id="form-tags" class="form-input" placeholder="balança, serial, erro" bind:value={formTags} />
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label" for="form-desc">Sintoma / Descrição Resumida</label>
-              <input type="text" id="form-desc" class="form-input" placeholder="Descreva como o erro se manifesta..." bind:value={formDescription} />
+              <input type="text" id="form-desc" class="form-input" placeholder="Como o problema é reportado..." bind:value={formDescription} />
             </div>
 
             <div class="form-group flex-1">
               <label class="form-label" for="form-sol">Solução Técnica (Passo a Passo Markdown)</label>
-              <textarea id="form-sol" class="form-input textarea-solution" placeholder="Insira o procedimento técnico..." bind:value={formSolution}></textarea>
+              <textarea id="form-sol" class="form-input textarea-solution" placeholder="Descreva os passos para correção do erro..." bind:value={formSolution}></textarea>
             </div>
 
             <div class="form-footer">
@@ -623,30 +623,30 @@
 
       <!-- REPORTS & METRICS TAB -->
       {:else if currentTab === 'reports'}
-        <div class="reports-container" in:fade={{ duration: 100 }}>
+        <div class="reports-container" in:fade={{ duration: 120 }}>
           <div class="metrics-grid">
             <div class="metric-card color-red">
-              <span class="metric-title">Buscas Realizadas</span>
+              <span class="metric-title">Consultas Totais</span>
               <span class="metric-number">{totalSearches}</span>
-              <span class="metric-subtitle">Total de consultas</span>
+              <span class="metric-subtitle">Total de buscas no chat</span>
             </div>
             
             <div class="metric-card color-green">
               <span class="metric-title">Taxa de Resolução</span>
               <span class="metric-number">{resolveRate}%</span>
-              <span class="metric-subtitle">Sinalizadas como resolvidas</span>
+              <span class="metric-subtitle">Resolvido pelos técnicos</span>
             </div>
 
             <div class="metric-card color-yellow">
-              <span class="metric-title">Maior Dúvida Comum</span>
+              <span class="metric-title">Termo mais Buscado</span>
               <span class="metric-number text-truncate">{topTag}</span>
-              <span class="metric-subtitle">Palavra-chave recorrente</span>
+              <span class="metric-subtitle">Palavra-chave frequente</span>
             </div>
 
             <div class="metric-card">
-              <span class="metric-title">Técnico Mais Ativo</span>
+              <span class="metric-title">Operador Ativo</span>
               <span class="metric-number text-truncate">{topUser}</span>
-              <span class="metric-subtitle">Mais consultas de erros</span>
+              <span class="metric-subtitle">Mais buscas efetuadas</span>
             </div>
           </div>
 
@@ -654,35 +654,35 @@
           <div class="table-card glass-effect">
             <div class="table-header-row">
               <h3 class="table-title">Histórico de Consultas</h3>
-              <button class="btn-danger" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick={() => storage.clearLogs()}>Limpar Histórico</button>
+              <button class="btn-danger" style="font-size: 0.72rem; padding: 0.35rem 0.75rem;" onclick={() => storage.clearLogs()}>Limpar Histórico</button>
             </div>
             <div class="table-scroll-wrapper">
               <table class="logs-table">
                 <thead>
                   <tr>
                     <th>Técnico</th>
-                    <th>Pesquisa Realizada</th>
-                    <th>Data e Hora</th>
+                    <th>Termo Pesquisado</th>
+                    <th>Data / Hora</th>
                     <th>Status</th>
-                    <th>ID Artigo</th>
+                    <th>Artigo Vinculado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each [...storage.logs].reverse() as log}
                     <tr>
-                      <td style="font-weight: 600;">{log.user}</td>
-                      <td>"{log.query}"</td>
-                      <td>{formatDate(log.timestamp)}</td>
+                      <td style="font-weight: 600; color: var(--text-primary);">{log.user}</td>
+                      <td style="color: var(--text-secondary);">"{log.query}"</td>
+                      <td style="color: var(--text-muted);">{formatDate(log.timestamp)}</td>
                       <td>
                         <span class="badge {log.resolved ? 'badge-success' : 'badge-danger'}">
                           {log.resolved ? 'Resolvido' : 'Pendente'}
                         </span>
                       </td>
-                      <td style="font-family: monospace; font-size: 0.75rem;">{log.articleId || 'N/A'}</td>
+                      <td style="font-family: monospace; font-size: 0.72rem; color: var(--text-muted);">{log.articleId || '-'}</td>
                     </tr>
                   {:else}
                     <tr>
-                      <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma busca registrada.</td>
+                      <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma busca registrada no histórico.</td>
                     </tr>
                   {/each}
                 </tbody>
@@ -691,33 +691,33 @@
           </div>
 
           <!-- Unresolved Queries Table -->
-          <div class="table-card glass-effect" style="margin-top: 1.5rem; border-color: rgba(255,51,51,0.15);">
-            <h3 class="table-title" style="color: #ff5252;">Consultas Sem Resolução (Fila de Documentação)</h3>
+          <div class="table-card glass-effect" style="margin-top: 1.5rem; border-color: rgba(244,63,94,0.12);">
+            <h3 class="table-title" style="color: var(--inovar-red);">Instruções Sem Resolução (Fila de Documentação)</h3>
             <div class="table-scroll-wrapper">
               <table class="logs-table">
                 <thead>
                   <tr>
-                    <th>Termo Pesquisado</th>
-                    <th>Vezes Pesquisado</th>
-                    <th>Última Consulta</th>
+                    <th>Termo Frustrado</th>
+                    <th>Vezes Consultado</th>
+                    <th>Último Registro</th>
                     <th style="width: 120px; text-align: center;">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each unresolvedGroups as grp}
                     <tr>
-                      <td style="font-weight: 600; color: #ff5252;">{grp.query}</td>
-                      <td>{grp.count}x</td>
-                      <td>{formatDate(grp.lastSeen)}</td>
+                      <td style="font-weight: 600; color: var(--inovar-red);">{grp.query}</td>
+                      <td style="color: var(--text-primary);">{grp.count}x</td>
+                      <td style="color: var(--text-muted);">{formatDate(grp.lastSeen)}</td>
                       <td style="text-align: center;">
-                        <button class="btn-primary" style="font-size: 0.7rem; padding: 0.3rem 0.6rem; width: auto;" onclick={() => handleDocumentQuery(grp.query)}>
+                        <button class="btn-primary" style="font-size: 0.7rem; padding: 0.3rem 0.55rem; width: auto;" onclick={() => handleDocumentQuery(grp.query)}>
                           Documentar
                         </button>
                       </td>
                     </tr>
                   {:else}
                     <tr>
-                      <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum chamado pendente de documentação.</td>
+                      <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma dúvida pendente de documentação.</td>
                     </tr>
                   {/each}
                 </tbody>
@@ -728,7 +728,7 @@
 
       <!-- CONFIGURATIONS TAB -->
       {:else if currentTab === 'settings'}
-        <div class="settings-grid" in:fade={{ duration: 100 }}>
+        <div class="settings-grid" in:fade={{ duration: 120 }}>
           <!-- User Manager -->
           <aside class="settings-sidebar glass-effect">
             <h3 class="settings-section-title">Contas de Operadores</h3>
@@ -765,24 +765,24 @@
                 </div>
               </div>
               <div class="btn-row" style="margin-top: 1rem; justify-content: flex-start; gap: 0.5rem;">
-                <button class="btn-primary" style="width: auto; padding: 0.55rem 1.5rem;" onclick={saveOperator}>
-                  {selectedOperatorUsername ? 'Salvar Operador' : 'Cadastrar Operador'}
+                <button class="btn-primary" style="width: auto; padding: 0.55rem 1.25rem;" onclick={saveOperator}>
+                  {selectedOperatorUsername ? 'Salvar Alterações' : 'Cadastrar Operador'}
                 </button>
                 {#if selectedOperatorUsername}
-                  <button class="btn-danger" style="width: auto; padding: 0.55rem 1.5rem;" onclick={() => deleteOperator(selectedOperatorUsername)}>Deletar</button>
-                  <button class="btn-secondary" style="width: auto; padding: 0.55rem 1.5rem;" onclick={resetOperatorForm}>Cancelar</button>
+                  <button class="btn-danger" style="width: auto; padding: 0.55rem 1.25rem;" onclick={() => deleteOperator(selectedOperatorUsername)}>Excluir Conta</button>
+                  <button class="btn-secondary" style="width: auto; padding: 0.55rem 1.25rem;" onclick={resetOperatorForm}>Cancelar</button>
                 {/if}
               </div>
             </div>
 
             <!-- Parameters of Mainframe -->
             <div class="settings-section" style="border-top: 1px solid var(--border-color); margin-top: 1.5rem; padding-top: 1.5rem;">
-              <h4>Parâmetros do Mainframe</h4>
+              <h4>Visual do Mainframe</h4>
               <div class="form-grid-2">
                 <div class="form-group">
                   <label class="form-label" for="sel-theme">Tema de Acentuação Glow</label>
                   <select id="sel-theme" class="form-input" bind:value={storage.settings.theme}>
-                    <option value="red">Vermelho Inovar (Clássico)</option>
+                    <option value="red">Vermelho Inovar (Padrão)</option>
                     <option value="blue">Azul Cyber (Futurista)</option>
                     <option value="green">Verde Matrix (Técnico)</option>
                   </select>
@@ -791,40 +791,40 @@
                 <div class="form-group checkbox-align">
                   <div class="checkbox-row">
                     <input type="checkbox" id="chk-scroll" bind:checked={storage.settings.autoScroll} />
-                    <label for="chk-scroll" class="checkbox-label">Habilitar auto-scroll no chat</label>
+                    <label for="chk-scroll" class="checkbox-label">Habilitar rolagem automática no chat</label>
                   </div>
                 </div>
               </div>
-              <div class="btn-row" style="margin-top: 1rem; justify-content: space-between;">
+              <div class="btn-row" style="margin-top: 1.25rem; justify-content: space-between;">
                 <button class="btn-primary" style="width: auto; padding: 0.55rem 1.5rem;" onclick={saveSystemSettings}>Salvar Parâmetros</button>
-                <button class="btn-danger" style="width: auto; padding: 0.55rem 1.5rem; font-size: 0.75rem;" onclick={handleResetDatabase}>Restaurar Banco de Dados Seed</button>
+                <button class="btn-danger" style="width: auto; padding: 0.55rem 1.5rem; font-size: 0.72rem;" onclick={handleResetDatabase}>Restaurar Banco Seed Original</button>
               </div>
             </div>
 
             <!-- Cloud Sync Section -->
             <div class="settings-section" style="border-top: 1px solid var(--border-color); margin-top: 1.5rem; padding-top: 1.5rem;">
-              <h4>Sincronização em Nuvem (Cloud Sync)</h4>
+              <h4>Sincronização Nuvem (Cloud Sync)</h4>
               <div class="form-grid-2">
                 <div class="form-group">
-                  <label class="form-label" for="sync-url">Endpoint (URL)</label>
+                  <label class="form-label" for="sync-url">URL da API</label>
                   <input type="text" id="sync-url" class="form-input" placeholder="https://api.inovar.com/sync" bind:value={syncUrl} />
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="sync-token">Token do Técnico</label>
-                  <input type="password" id="sync-token" class="form-input" placeholder="Token de acesso..." bind:value={syncToken} />
+                  <label class="form-label" for="sync-token">Chave Token do Técnico</label>
+                  <input type="password" id="sync-token" class="form-input" placeholder="Chave de sincronização..." bind:value={syncToken} />
                 </div>
               </div>
               <div class="sync-actions-row">
-                <span class="sync-status">Status: <strong>{syncStatus}</strong></span>
-                <button class="btn-primary" style="width: auto; padding: 0.55rem 1.5rem;" onclick={handleCloudSync} disabled={isSyncing}>
-                  {isSyncing ? 'Sincronizando...' : 'Sincronizar com Nuvem'}
+                <span class="sync-status" style="font-size: 0.75rem; color: var(--text-secondary);">Status: <strong>{syncStatus}</strong></span>
+                <button class="btn-primary" style="width: auto; padding: 0.55rem 1.25rem;" onclick={handleCloudSync} disabled={isSyncing}>
+                  {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
                 </button>
               </div>
             </div>
 
             <!-- Discord bot Settings -->
             <div class="settings-section" style="border-top: 1px solid var(--border-color); margin-top: 1.5rem; padding-top: 1.5rem;">
-              <h4>Conexão do Discord</h4>
+              <h4>Integração com Discord</h4>
               <div class="form-grid-2">
                 <div class="form-group">
                   <label class="form-label" for="dc-token">Token do Bot Discord</label>
@@ -835,7 +835,7 @@
                   <input type="text" id="dc-guild" class="form-input" placeholder="Server ID..." bind:value={discordGuildId} />
                 </div>
               </div>
-              <button class="btn-primary" style="width: auto; margin-top: 1rem; padding: 0.55rem 1.5rem;" onclick={saveDiscordSettings}>Salvar Conexão</button>
+              <button class="btn-primary" style="width: auto; margin-top: 1rem; padding: 0.55rem 1.5rem;" onclick={saveDiscordSettings}>Salvar Credenciais Discord</button>
             </div>
           </main>
         </div>
@@ -848,8 +848,8 @@
 {#if showCategoryModal}
   <div class="modal-overlay" transition:fade={{ duration: 150 }}>
     <div class="modal-card categories-card glass-effect">
-      <h3 class="modal-title">Gerenciar Categorias</h3>
-      <p class="modal-desc">Adicione ou remova categorias da sua base de conhecimentos local.</p>
+      <h3 class="modal-title">Editar Categorias</h3>
+      <p class="modal-desc">Adicione ou remova classes de indexação da base de dados</p>
 
       <div class="categories-list">
         {#each storage.categories as cat}
@@ -861,11 +861,11 @@
       </div>
 
       <div class="add-cat-form">
-        <input type="text" class="form-input" placeholder="Nova categoria..." bind:value={newCategoryName} />
-        <button class="btn-primary" style="width: auto;" onclick={addCategory}>Adicionar</button>
+        <input type="text" class="form-input" placeholder="Nome da categoria..." bind:value={newCategoryName} />
+        <button class="btn-primary" style="width: auto;" onclick={addCategory}>Inserir</button>
       </div>
 
-      <button class="btn-secondary" style="width: 100%; margin-top: 1rem;" onclick={() => showCategoryModal = false}>Fechar</button>
+      <button class="btn-secondary" style="width: 100%; margin-top: 1rem;" onclick={() => showCategoryModal = false}>Fechar Janela</button>
     </div>
   </div>
 {/if}
@@ -874,13 +874,13 @@
 {#if showDiscordImport}
   <div class="modal-overlay" transition:fade={{ duration: 150 }}>
     <div class="modal-card discord-explorer-card glass-effect">
-      <h3 class="modal-title" style="color: #5865F2; display: flex; align-items: center; gap: 0.5rem;">
-        <span>💬 Explorador do Discord</span>
+      <h3 class="modal-title" style="color: #5865F2; display: flex; align-items: center; gap: 0.5rem; font-family: 'Outfit', sans-serif;">
+        <span>Explorador do Discord</span>
         {#if isLoadingChannels}
-          <span style="font-size: 0.75rem; color: var(--text-muted);">(Buscando canais...)</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">(Buscando canais...)</span>
         {/if}
       </h3>
-      <p class="modal-desc">Selecione um canal, visualize as mensagens e inicie a curadoria.</p>
+      <p class="modal-desc">Importe postagens com instruções e resoluções compartilhadas no Discord</p>
 
       <div class="discord-three-columns">
         <!-- Col 1: Channels list -->
@@ -912,11 +912,11 @@
             {:else}
               {#each finalMessages as msg}
                 <button class="discord-message-item {selectedMessage && selectedMessage.id === msg.id ? 'active' : ''}" onclick={() => selectDiscordMessage(msg)}>
-                  <span class="msg-author">{msg.author.username}:</span>
-                  <span class="msg-snippet">{msg.content || '(Anexo/Imagem)'}</span>
+                  <span class="msg-author">@{msg.author.username}</span>
+                  <span class="msg-snippet">{msg.content || '(Anexo de Imagem)'}</span>
                 </button>
               {:else}
-                <span class="empty-col">Nenhuma mensagem encontrada.</span>
+                <span class="empty-col">Nenhuma postagem pendente.</span>
               {/each}
             {/if}
           </div>
@@ -924,11 +924,11 @@
 
         <!-- Col 3: Preview -->
         <div class="discord-col-preview">
-          <span class="col-header">Visualização</span>
+          <span class="col-header">Conteúdo</span>
           <div class="col-scroll preview-content">
             {#if selectedMessage}
               <div class="message-preview-bubble">
-                <span class="preview-author">{selectedMessage.author.username}</span>
+                <span class="preview-author">@{selectedMessage.author.username}</span>
                 <span class="preview-time">{formatDate(selectedMessage.timestamp)}</span>
                 <p class="preview-text">{selectedMessage.content}</p>
                 {#if selectedMessage.attachments && selectedMessage.attachments.length > 0}
@@ -940,7 +940,7 @@
                 {/if}
               </div>
             {:else}
-              <span class="empty-col">Selecione uma mensagem.</span>
+              <span class="empty-col">Selecione uma mensagem para visualização</span>
             {/if}
           </div>
         </div>
@@ -949,7 +949,7 @@
       <div class="modal-actions-flex" style="margin-top: 1.5rem;">
         <button class="btn-secondary" onclick={() => showDiscordImport = false}>Fechar Explorador</button>
         <button class="btn-primary" style="background: #5865F2; border-color: #5865F2;" onclick={startCuration} disabled={!selectedMessage}>
-          Iniciar Curadoria do Item
+          Importar e Curar Postagem
         </button>
       </div>
     </div>
@@ -960,21 +960,21 @@
 {#if showCurationWizard}
   <div class="modal-overlay" transition:fade={{ duration: 150 }}>
     <div class="modal-card curation-wizard-card glass-effect">
-      <h3 class="modal-title" style="color: var(--color-success);">🧙 Assistente de Curadoria</h3>
-      <p class="modal-desc">Transforme a postagem do suporte do Discord em um artigo limpo na Base de Conhecimento.</p>
+      <h3 class="modal-title" style="color: #10b981; font-family: 'Outfit', sans-serif;">Assistente de Curadoria</h3>
+      <p class="modal-desc">Organize e adapte a informação vinda do Discord antes de publicar na Base local</p>
 
       <div class="curation-split-layout">
         <!-- Message Original Preview -->
         <div class="curation-orig-panel">
-          <span class="panel-tag">Postagem Original do Discord</span>
+          <span class="panel-tag">Mensagem Original</span>
           <div class="orig-scroll">
             {#if selectedMessage}
-              <div style="font-weight: 700; font-size: 0.8rem; color: #5865F2; margin-bottom: 0.25rem;">@{selectedMessage.author.username}:</div>
-              <p style="white-space: pre-wrap; font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary);">{selectedMessage.content}</p>
+              <div style="font-weight: 700; font-size: 0.78rem; color: #5865F2; margin-bottom: 0.35rem;">@{selectedMessage.author.username}:</div>
+              <p style="white-space: pre-wrap; font-size: 0.78rem; line-height: 1.5; color: var(--text-secondary);">{selectedMessage.content}</p>
               {#if selectedMessage.attachments && selectedMessage.attachments.length > 0}
                 {#each selectedMessage.attachments as att}
                   {#if att.content_type && att.content_type.startsWith('image/')}
-                    <div style="margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-muted);">[Anexo de Imagem associado será baixado automaticamente]</div>
+                    <div style="margin-top: 0.75rem; font-size: 0.7rem; color: var(--text-muted); font-style: italic;">[O anexo de imagem associado será baixado localmente]</div>
                   {/if}
                 {/each}
               {/if}
@@ -1021,7 +1021,7 @@
         <button class="btn-danger" style="flex: 0 0 130px;" onclick={() => showCurationWizard = false}>Cancelar</button>
         <div class="flex-row" style="flex: 1; justify-content: flex-end; gap: 0.5rem;">
           <button class="btn-secondary" onclick={() => saveCuration(true)}>Salvar como Rascunho</button>
-          <button class="btn-primary" style="background: var(--color-success); border-color: var(--color-success);" onclick={() => saveCuration(false)}>Publicar Artigo</button>
+          <button class="btn-primary" style="background: #10b981; border-color: #10b981;" onclick={() => saveCuration(false)}>Publicar Artigo</button>
         </div>
       </div>
     </div>
@@ -1044,32 +1044,33 @@
     padding: 2.5rem;
     border-radius: var(--radius-lg);
     width: 100%;
-    max-width: 400px;
+    max-width: 380px;
     text-align: center;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   }
 
   .password-icon {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     color: var(--inovar-red);
   }
 
   .password-title {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
+    font-size: 1.15rem;
+    margin-bottom: 0.35rem;
   }
 
   .password-desc {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
     margin-bottom: 1.5rem;
+    line-height: 1.4;
   }
 
   .error-msg {
-    color: #ff5252;
+    color: #ef4444;
     font-size: 0.75rem;
-    margin-top: 0.5rem;
+    margin-top: 0.45rem;
     text-align: left;
   }
 
@@ -1096,49 +1097,47 @@
 
   .admin-nav-tabs {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .admin-tab-btn {
     background: none;
     border: 1px solid transparent;
     color: var(--text-secondary);
-    padding: 0.5rem 1rem;
+    padding: 0.45rem 0.85rem;
     border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     transition: var(--transition-fast);
   }
 
   .admin-tab-btn:hover {
     color: var(--text-primary);
-    background: rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.02);
   }
 
   .admin-tab-btn.active {
     color: #ffffff;
-    background: var(--inovar-red);
-    border-color: var(--inovar-red-hover);
-    box-shadow: 0 0 10px rgba(148, 0, 9, 0.25);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
   }
 
   .btn-back-chat {
     background: rgba(255,255,255,0.02);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.5rem 1rem;
+    color: var(--text-secondary);
+    padding: 0.45rem 0.85rem;
     border-radius: var(--radius-md);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     transition: var(--transition-fast);
   }
 
   .btn-back-chat:hover {
-    background: var(--inovar-red);
-    border-color: var(--inovar-red-hover);
-    color: #ffffff;
+    border-color: var(--inovar-red);
+    color: var(--text-primary);
   }
 
   .admin-content-viewport {
@@ -1152,7 +1151,7 @@
   }
 
   .sidebar-column {
-    width: 320px;
+    width: 280px;
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -1170,10 +1169,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--text-muted);
   }
 
   .btn-row {
@@ -1186,18 +1185,18 @@
     border: none;
     color: #ffffff;
     font-size: 0.65rem;
-    padding: 0.3rem 0.5rem;
+    padding: 0.25rem 0.45rem;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
   }
 
   .btn-new {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.04);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     font-size: 0.65rem;
-    padding: 0.3rem 0.5rem;
+    padding: 0.25rem 0.45rem;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
@@ -1205,8 +1204,8 @@
 
   .search-input-small {
     width: 100%;
-    padding: 0.45rem 0.75rem;
-    background: rgba(0,0,0,0.25);
+    padding: 0.45rem 0.65rem;
+    background: rgba(0,0,0,0.15);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
@@ -1223,35 +1222,35 @@
 
   .article-list-item {
     width: 100%;
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 1rem;
     text-align: left;
     background: none;
     border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.02);
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.15rem;
     transition: var(--transition-fast);
   }
 
   .article-list-item:hover {
-    background: rgba(255,255,255,0.02);
+    background: rgba(255,255,255,0.01);
   }
 
   .article-list-item.active {
-    background: rgba(148, 0, 9, 0.08);
-    border-left: 3px solid var(--inovar-red);
+    background: rgba(255,255,255,0.02);
+    border-left: 2px solid var(--inovar-red);
   }
 
   .art-title {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--text-primary);
   }
 
   .art-category {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-muted);
     text-transform: uppercase;
   }
@@ -1261,39 +1260,22 @@
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.85rem;
     overflow-y: auto;
   }
 
   .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.35rem;
   }
 
   .form-label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     letter-spacing: 0.05em;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 0.65rem 0.85rem;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-size: 0.8rem;
-    outline: none;
-    transition: var(--transition-fast);
-  }
-
-  .form-input:focus {
-    border-color: var(--inovar-red-hover);
-    box-shadow: 0 0 10px rgba(148, 0, 9, 0.15);
   }
 
   .form-grid-2 {
@@ -1310,7 +1292,7 @@
   .btn-add-cat {
     background: rgba(255,255,255,0.02);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    color: var(--text-secondary);
     width: 38px;
     height: 38px;
     border-radius: var(--radius-sm);
@@ -1320,7 +1302,7 @@
 
   .textarea-solution {
     flex: 1;
-    min-height: 150px;
+    min-height: 120px;
     resize: vertical;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
@@ -1331,18 +1313,17 @@
     justify-content: space-between;
     border-top: 1px solid var(--border-color);
     padding-top: 1rem;
-    margin-top: 0.5rem;
   }
 
   .btn-primary {
     background: var(--inovar-red);
-    border: 1px solid var(--inovar-red-hover);
+    border: none;
     color: #ffffff;
     font-weight: 600;
-    padding: 0.6rem 1.25rem;
+    padding: 0.55rem 1.15rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     transition: var(--transition-fast);
   }
 
@@ -1351,36 +1332,36 @@
   }
 
   .btn-danger {
-    background: rgba(255, 82, 82, 0.15);
-    border: 1px solid rgba(255, 82, 82, 0.3);
-    color: #ff5252;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
     font-weight: 600;
-    padding: 0.6rem 1.25rem;
+    padding: 0.55rem 1.15rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     transition: var(--transition-fast);
   }
 
   .btn-danger:hover {
-    background: rgba(255, 82, 82, 0.25);
+    background: rgba(239, 68, 68, 0.15);
     color: #ffffff;
   }
 
   .btn-secondary {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
+    color: var(--text-secondary);
     font-weight: 600;
-    padding: 0.6rem 1.25rem;
+    padding: 0.55rem 1.15rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     transition: var(--transition-fast);
   }
 
   .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
   }
 
   /* Reports styling */
@@ -1398,54 +1379,51 @@
   }
 
   .metric-card {
-    background: var(--bg-secondary);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1rem 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.15rem;
   }
 
   .metric-card.color-red {
-    border-color: rgba(148, 0, 9, 0.25);
-    background-image: radial-gradient(circle at 100% 0, rgba(148, 0, 9, 0.05) 0%, transparent 60%);
+    border-color: rgba(244, 63, 94, 0.15);
   }
 
   .metric-card.color-green {
-    border-color: rgba(0, 148, 91, 0.25);
-    background-image: radial-gradient(circle at 100% 0, rgba(0, 148, 91, 0.05) 0%, transparent 60%);
+    border-color: rgba(16, 185, 129, 0.15);
   }
 
   .metric-card.color-yellow {
-    border-color: rgba(255, 170, 0, 0.2);
-    background-image: radial-gradient(circle at 100% 0, rgba(255, 170, 0, 0.05) 0%, transparent 60%);
+    border-color: rgba(251, 191, 36, 0.12);
   }
 
   .metric-title {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--text-muted);
   }
 
   .metric-number {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--text-primary);
   }
 
   .color-green .metric-number {
-    color: #00cc80;
+    color: #10b981;
   }
 
   .color-yellow .metric-number {
-    color: #ffaa00;
+    color: #fbbf24;
   }
 
   .metric-subtitle {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-muted);
   }
 
@@ -1456,7 +1434,7 @@
   }
 
   .table-card {
-    background: var(--bg-secondary);
+    background: rgba(255, 255, 255, 0.01);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
@@ -1466,65 +1444,46 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
   }
 
   .table-title {
     font-family: 'Outfit', sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
   }
 
   .table-scroll-wrapper {
-    max-height: 280px;
+    max-height: 250px;
     overflow-y: auto;
   }
 
   .logs-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
   }
 
   .logs-table th {
     text-align: left;
-    padding: 0.6rem 0.8rem;
+    padding: 0.55rem 0.75rem;
     border-bottom: 1px solid var(--border-color);
     color: var(--text-muted);
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
   }
 
   .logs-table td {
-    padding: 0.65rem 0.8rem;
-    border-bottom: 1px solid rgba(255,255,255,0.02);
-  }
-
-  .badge {
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    font-weight: 700;
-  }
-
-  .badge-success {
-    background: rgba(0, 148, 91, 0.15);
-    color: #00ff9d;
-    border: 1px solid rgba(0, 148, 91, 0.3);
-  }
-
-  .badge-danger {
-    background: rgba(255, 82, 82, 0.15);
-    color: #ff5252;
-    border: 1px solid rgba(255, 82, 82, 0.3);
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.01);
   }
 
   /* Settings Page */
   .settings-grid {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 240px 1fr;
     height: 100%;
   }
 
@@ -1537,10 +1496,10 @@
   }
 
   .settings-section-title {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--text-muted);
   }
 
   .operator-list-scroll {
@@ -1548,14 +1507,14 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.35rem;
   }
 
   .operator-item {
     background: none;
     border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    padding: 0.65rem 0.85rem;
+    color: var(--text-secondary);
+    padding: 0.55rem 0.75rem;
     border-radius: var(--radius-md);
     cursor: pointer;
     text-align: left;
@@ -1563,24 +1522,26 @@
     justify-content: space-between;
     align-items: center;
     transition: var(--transition-fast);
+    font-size: 0.78rem;
   }
 
   .operator-item:hover {
-    background: rgba(255,255,255,0.02);
-    border-color: var(--inovar-red-hover);
+    background: rgba(255,255,255,0.01);
+    border-color: var(--inovar-red);
+    color: var(--text-primary);
   }
 
   .role-badge {
-    font-size: 0.6rem;
-    padding: 0.1rem 0.35rem;
+    font-size: 0.58rem;
+    padding: 0.1rem 0.3rem;
     background: rgba(255,255,255,0.05);
     border-radius: 4px;
     font-weight: 700;
   }
 
   .role-badge.adm {
-    background: rgba(148,0,9,0.2);
-    color: #ff5252;
+    background: rgba(244,63,94,0.1);
+    color: var(--inovar-red);
   }
 
   .settings-form-column {
@@ -1590,9 +1551,9 @@
 
   .settings-section h4 {
     font-family: 'Outfit', sans-serif;
-    font-size: 0.95rem;
-    color: var(--inovar-red-hover);
-    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    color: var(--inovar-red);
+    margin-bottom: 0.85rem;
     text-transform: uppercase;
   }
 
@@ -1612,11 +1573,11 @@
   .checkbox-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
   }
 
   .checkbox-label {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
     cursor: pointer;
   }
@@ -1626,11 +1587,6 @@
     justify-content: space-between;
     align-items: center;
     margin-top: 1rem;
-  }
-
-  .sync-status {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
   }
 
   /* Modals generic overlays */
@@ -1650,44 +1606,46 @@
     padding: 2rem;
     border-radius: var(--radius-lg);
     width: 100%;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
   }
 
   .categories-card {
-    max-width: 400px;
+    max-width: 380px;
   }
 
   .modal-title {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
   }
 
   .modal-desc {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-secondary);
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.15rem;
+    line-height: 1.4;
   }
 
   .categories-list {
-    max-height: 180px;
+    max-height: 150px;
     overflow-y: auto;
     border: 1px solid var(--border-color);
-    background: rgba(0,0,0,0.25);
+    background: rgba(0,0,0,0.15);
     border-radius: var(--radius-md);
-    padding: 0.5rem;
+    padding: 0.4rem;
     margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
   }
 
   .category-list-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.8rem;
-    padding: 0.4rem 0.6rem;
-    background: rgba(255,255,255,0.02);
+    font-size: 0.78rem;
+    padding: 0.35rem 0.55rem;
+    background: rgba(255,255,255,0.01);
     border-radius: 4px;
   }
 
@@ -1705,22 +1663,22 @@
 
   .add-cat-form {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   /* Discord importer 3-cols styling */
   .discord-explorer-card {
-    max-width: 960px;
+    max-width: 900px;
     width: 90%;
   }
 
   .discord-three-columns {
     display: grid;
-    grid-template-columns: 220px 280px 1fr;
+    grid-template-columns: 200px 260px 1fr;
     gap: 1rem;
-    height: 380px;
+    height: 350px;
     border: 1px solid var(--border-color);
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.2);
     border-radius: var(--radius-lg);
     overflow: hidden;
   }
@@ -1737,26 +1695,26 @@
   }
 
   .col-header {
-    background: rgba(255,255,255,0.02);
-    padding: 0.6rem 0.85rem;
+    background: rgba(255,255,255,0.01);
+    padding: 0.55rem 0.75rem;
     border-bottom: 1px solid var(--border-color);
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--text-muted);
   }
 
   .col-scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 0.4rem;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
   }
 
   .empty-col {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
     text-align: center;
     padding-top: 3rem;
@@ -1767,9 +1725,9 @@
     background: none;
     border: none;
     color: var(--text-secondary);
-    padding: 0.45rem 0.6rem;
+    padding: 0.4rem 0.55rem;
     border-radius: 4px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     cursor: pointer;
     transition: var(--transition-fast);
   }
@@ -1780,7 +1738,7 @@
   }
 
   .discord-channel-btn.active {
-    background: rgba(88, 101, 242, 0.15);
+    background: rgba(88, 101, 242, 0.08);
     color: #7289da;
     font-weight: 700;
   }
@@ -1789,12 +1747,12 @@
     text-align: left;
     background: none;
     border: 1px solid transparent;
-    padding: 0.6rem;
+    padding: 0.5rem;
     border-radius: var(--radius-md);
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.1rem;
     transition: var(--transition-fast);
   }
 
@@ -1803,18 +1761,18 @@
   }
 
   .discord-message-item.active {
-    background: rgba(88,101,242,0.1);
-    border-color: rgba(88,101,242,0.3);
+    background: rgba(88,101,242,0.06);
+    border-color: rgba(88,101,242,0.25);
   }
 
   .msg-author {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     color: #7289da;
   }
 
   .msg-snippet {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
@@ -1822,30 +1780,31 @@
   }
 
   .message-preview-bubble {
-    background: rgba(255,255,255,0.02);
+    background: rgba(255,255,255,0.01);
     border: 1px solid var(--border-color);
-    padding: 0.85rem;
+    padding: 0.75rem;
     border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
   }
 
   .preview-author {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: #7289da;
   }
 
   .preview-time {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     color: var(--text-muted);
   }
 
   .preview-text {
-    font-size: 0.8rem;
-    line-height: 1.4;
+    font-size: 0.78rem;
+    line-height: 1.5;
     white-space: pre-wrap;
+    color: var(--text-secondary);
   }
 
   .preview-attachment {
@@ -1864,43 +1823,43 @@
   .checkbox-inline {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
   }
 
   .checkbox-inline label {
-    font-size: 0.65rem;
-    color: var(--text-secondary);
+    font-size: 0.62rem;
+    color: var(--text-muted);
     cursor: pointer;
   }
 
   /* Curation Wizard style */
   .curation-wizard-card {
-    max-width: 900px;
+    max-width: 850px;
     width: 90%;
   }
 
   .curation-split-layout {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 280px 1fr;
     gap: 1rem;
-    height: 420px;
+    height: 380px;
   }
 
   .curation-orig-panel {
     border: 1px solid var(--border-color);
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.2);
     border-radius: var(--radius-lg);
-    padding: 1rem;
+    padding: 0.85rem;
     display: flex;
     flex-direction: column;
   }
 
   .panel-tag {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.65rem;
   }
 
   .orig-scroll {
@@ -1911,12 +1870,12 @@
   .curation-edit-form {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.65rem;
     overflow-y: auto;
   }
 
   .curation-sol-textarea {
-    min-height: 130px;
+    min-height: 100px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
   }
