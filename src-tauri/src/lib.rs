@@ -63,6 +63,55 @@ fn hash_password(password: String) -> String {
     format!("{:x}", result)
 }
 
+#[tauri::command]
+async fn discord_api_get(token: String, path: String) -> Result<String, String> {
+    let client = reqwest::Client::new();
+    let url = format!("https://discord.com/api/v10/{}", path);
+    let res = client.get(&url)
+        .header("Authorization", format!("Bot {}", token))
+        .header("User-Agent", "InovarAssistente (Tauri)")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = res.status();
+    let body = res.text().await.map_err(|e| e.to_string())?;
+    
+    if !status.is_success() {
+        return Err(format!("Erro {}: {}", status, body));
+    }
+    
+    Ok(body)
+}
+
+#[tauri::command]
+async fn download_discord_image(app: AppHandle, url: String, filename: String) -> Result<bool, String> {
+    let client = reqwest::Client::new();
+    let res = client.get(&url)
+        .header("User-Agent", "InovarAssistente (Tauri)")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !res.status().is_success() {
+        return Err(format!("Falha ao baixar imagem, status HTTP: {}", res.status()));
+    }
+
+    let bytes = res.bytes().await.map_err(|e| e.to_string())?;
+
+    if let Some(app_dir) = app.path().app_data_dir().ok() {
+        let imported_images_dir = app_dir.join("imported_images");
+        if fs::create_dir_all(&imported_images_dir).is_err() {
+            return Err("Não foi possível criar o diretório de destino".into());
+        }
+        let file_path = imported_images_dir.join(filename);
+        fs::write(file_path, bytes).map_err(|e| e.to_string())?;
+        Ok(true)
+    } else {
+        Err("Diretório do app não localizado".into())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -72,7 +121,9 @@ pub fn run() {
             write_db_file,
             write_binary_file,
             read_binary_file_as_base64,
-            hash_password
+            hash_password,
+            discord_api_get,
+            download_discord_image
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

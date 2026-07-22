@@ -326,14 +326,59 @@
     isLoadingChannels = true;
     discordChannels = [];
     try {
-      const response = await fetch(`https://discord.com/api/v10/guilds/${discordGuildId}/channels`, {
-        headers: { Authorization: `Bot ${discordBotToken}` }
+      // 1. Fetch normal channels
+      const channelsText = await invoke('discord_api_get', {
+        token: discordBotToken,
+        path: `guilds/${discordGuildId}/channels`
       });
-      if (!response.ok) throw new Error('Falha ao obter canais.');
-      const data = await response.json();
-      // Filter text channels only
-      discordChannels = data.filter(c => c.type === 0 || c.type === 15 || c.type === 11); // text, forum, thread
+      const channelsData = JSON.parse(channelsText);
+      
+      // Filter text channels (0), announcement channels (5) and forum channels (15)
+      const filteredChannels = channelsData.filter(c => c.type === 0 || c.type === 5 || c.type === 15);
+      
+      // Build a map of channel ID -> name for parent reference
+      const channelNames = {};
+      channelsData.forEach(c => {
+        channelNames[c.id] = c.name;
+      });
+
+      // Format text channels with parent category name
+      const textChannels = filteredChannels.map(c => {
+        const parentName = channelNames[c.parent_id] || '';
+        return {
+          ...c,
+          name: parentName ? `${parentName} ➔ ${c.name}` : c.name
+        };
+      });
+
+      // 2. Try fetching active threads (optional, won't crash if fails or permissions missing)
+      let threads = [];
+      try {
+        const threadsText = await invoke('discord_api_get', {
+          token: discordBotToken,
+          path: `guilds/${discordGuildId}/threads/active`
+        });
+        const threadsData = JSON.parse(threadsText);
+        if (threadsData && threadsData.threads) {
+          threads = threadsData.threads.map(t => {
+            const parentName = channelNames[t.parent_id] || '';
+            const displayName = parentName ? `${parentName} > 🧵 ${t.name}` : `🧵 ${t.name}`;
+            return {
+              id: t.id,
+              name: displayName,
+              type: t.type
+            };
+          });
+        }
+      } catch (threadError) {
+        console.warn('Falha ao obter threads do Discord:', threadError);
+      }
+
+      // 3. Merge them and sort alphabetically by name
+      discordChannels = [...textChannels, ...threads].sort((a, b) => a.name.localeCompare(b.name));
+
     } catch(e) {
+      console.error(e);
       alert('Erro ao conectar à API do Discord. Verifique suas credenciais.');
       showDiscordImport = false;
     } finally {
@@ -347,12 +392,13 @@
     channelMessages = [];
     selectedMessage = null;
     try {
-      const response = await fetch(`https://discord.com/api/v10/channels/${chanId}/messages?limit=50`, {
-        headers: { Authorization: `Bot ${discordBotToken}` }
+      const resText = await invoke('discord_api_get', {
+        token: discordBotToken,
+        path: `channels/${chanId}/messages?limit=100`
       });
-      if (!response.ok) throw new Error('Falha ao obter mensagens.');
-      channelMessages = await response.json();
+      channelMessages = JSON.parse(resText);
     } catch(e) {
+      console.error(e);
       alert('Erro ao buscar mensagens do canal.');
     } finally {
       isLoadingMessages = false;
@@ -419,14 +465,8 @@
       const img = selectedMessage.attachments.find(a => a.content_type && a.content_type.startsWith('image/'));
       if (img) {
         try {
-          const dlResponse = await fetch(img.url);
-          const arrayBuffer = await dlResponse.arrayBuffer();
-          const base64Content = btoa(
-            new Uint8Array(arrayBuffer)
-              .reduce((data, byte) => data + String.fromCharCode(byte), '')
-          );
           const filename = `${Date.now()}_${img.filename}`;
-          const ok = await invoke('write_binary_file', { filename, base64Content });
+          const ok = await invoke('download_discord_image', { url: img.url, filename });
           if (ok) {
             // Append local image path reference in Markdown solution
             data.solution += `\n\n![Anexo Importado](${filename})`;
